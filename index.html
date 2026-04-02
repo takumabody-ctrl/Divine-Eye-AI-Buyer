@@ -671,19 +671,32 @@
                     method: "POST", body: JSON.stringify({ contents: [{ parts: parts }], tools: [{ google_search_retrieval: {} }] })
                 });
                 const d = await res.json();
-                const txt = d.candidates[0].content.parts[0].text;
-                const resJ = JSON.parse((txt.match(/\{[\s\S]*\}/) || [txt])[0]);
 
-                els.brand.value = resJ.brand; els.sell.value = resJ.sell_price;
-                els.aiText.innerHTML = resJ.advice; els.aiBox.style.display = "block";
-                els.questionsText.innerHTML = resJ.missing_info_questions; els.questionsBox.style.display = "block";
-                els.strategyText.innerHTML = resJ.sales_strategy; els.strategyBox.style.display = "block";
-                els.soldText.innerHTML = resJ.sold_evidence; els.soldBox.style.display = "block";
-                els.negotiationText.innerHTML = resJ.store_negotiation; els.negotiationBox.style.display = "block";
+                if (d.error) throw new Error(`Google API Error: ${d.error.message} (${d.error.code})`);
+                if (!d.candidates || d.candidates.length === 0) throw new Error("AIの応答が空です。画像が不適切と判定されたか、フィルタリングされた可能性があります。");
+
+                const txt = d.candidates[0].content.parts[0].text;
+                let resJ;
+                try {
+                    const jsonMatch = txt.match(/\{[\s\S]*\}/);
+                    resJ = JSON.parse(jsonMatch ? jsonMatch[0] : txt);
+                } catch (e) {
+                    console.warn("JSON Parse Error, using raw text", txt);
+                    throw new Error("AIが正しい形式で回答できませんでした。もう一度お試しください。");
+                }
+
+                els.brand.value = resJ.brand || ""; els.sell.value = resJ.sell_price || 0;
+                els.aiText.innerHTML = resJ.advice || "判定なし"; els.aiBox.style.display = "block";
+                els.questionsText.innerHTML = resJ.missing_info_questions || "-"; els.questionsBox.style.display = "block";
+                els.strategyText.innerHTML = resJ.sales_strategy || "-"; els.strategyBox.style.display = "block";
+                els.soldText.innerHTML = resJ.sold_evidence || "-"; els.soldBox.style.display = "block";
+                els.negotiationText.innerHTML = resJ.store_negotiation || "-"; els.negotiationBox.style.display = "block";
 
                 currentHtmlReport = resJ.advice;
                 calculate();
-            } catch (e) { alert("解析失敗: " + e.message); }
+            } catch (e) {
+                alert("🚨 解析に失敗しました。\n\n【詳細】: " + e.message + "\n\n※APIキーが正しいか、または入力欄に『余計な空白(スペース)』が入っていないか確認してください。");
+            }
             finally { els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block"; }
         }
 
