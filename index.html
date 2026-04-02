@@ -627,7 +627,7 @@
 
         // 📸 カメラ・画像
         async function handleMultipleUpload(e) {
-            const files = Array.from(e.target.files).slice(0, 5); // 高速化のため5枚制限
+            const files = Array.from(e.target.files).slice(0, 15); // プロ仕様として15枚まで拡張
             els.visionLoader.style.display = "block";
             for (let f of files) {
                 await new Promise(r => {
