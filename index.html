@@ -501,69 +501,77 @@
                 <button id="btn-mercari" class="btn" onclick="searchMercari()" disabled>🛍 手動相場リサーチ</button>
             </div>
 
-            <div class="result-container" id="result-box">
-                <div style="font-size: 0.9rem; color: var(--text-sub);">AI 判定ランク</div>
-                <div class="rank-display" id="rank-text">-</div>
-                <div style="font-size: 0.85rem; font-weight: 600;" id="desc-text">Brand & Priceを入力</div>
-
-                <div class="stats-grid">
-                    <div class="stat-box"><span class="stat-label">純利益</span><span class="stat-value"
-                            id="profit-text">¥0</span></div>
-                    <div class="stat-box"><span class="stat-label">利益率</span><span class="stat-value"
-                            id="margin-text">0%</span></div>
-                </div>
-
-                <button id="btn-save-db" class="btn" onclick="saveToDatabase()" disabled>💾 在庫DBへストック</button>
-                <button id="btn-line" class="btn" onclick="shareToLine()" style="display:none;">💬 LINEでレポート共有</button>
-
-                <div id="ai-questions-box" class="missing-info-box">
-                    <div style="font-size: 0.9rem; color: #00aaff; font-weight: bold; margin-bottom: 8px;">💬 AIからの確認事項
-                    </div>
-                    <div id="ai-questions-text" style="font-size: 0.85rem;"></div>
-                </div>
-                <div id="sales-strategy-box" class="strategy-box">
-                    <div style="font-size: 0.9rem; color: #38ef7d; font-weight: bold; margin-bottom: 8px;">💡 利益拡大・販売戦略
-                    </div>
-                    <div id="ai-sales-strategy-text" style="font-size: 0.85rem;"></div>
-                </div>
-                <div id="sold-evidence-box" class="sold-evidence-box">
-                    <div style="font-size: 0.9rem; color: #ff5722; font-weight: bold; margin-bottom: 8px;">📈
-                        実売（SOLD）データ</div>
-                    <div id="ai-sold-evidence" style="font-size: 0.85rem;"></div>
-                </div>
-                <div id="negotiation-result-box" class="negotiation-box">
-                    <div style="font-size: 0.9rem; color: #ffd700; font-weight: bold; margin-bottom: 8px;">🏢 業者買取・交渉術
-                    </div>
-                    <div id="ai-negotiation-text" style="font-size: 0.85rem;"></div>
-                </div>
-                <div id="ai-result-box"
-                    style="margin-top:20px; background:rgba(142,45,226,0.1); border:1px solid rgba(142,45,226,0.5); padding:12px; border-radius:8px; text-align:left; display:none;">
-                    <div style="font-size:0.9rem; color:#d08aff; font-weight:bold; margin-bottom:8px;">🤖 AI総論</div>
-                    <div id="ai-advice-text" style="font-size:0.85rem;"></div>
-                </div>
+            <div id="debug-log"
+                style="font-size: 0.7rem; background: #000; color: #0f0; padding: 10px; margin-top: 20px; border-radius: 5px; height: 100px; overflow-y: auto; display: none; font-family: monospace;">
+                [DEBUG CONSOLE]<br>
             </div>
+            <div style="text-align: center; font-size: 0.6rem; color: #666; margin-top: 10px;">Ver 1.2.1 (Stability
+                Patch)</div>
         </div>
 
-        <div id="view-database" class="view-content">
-            <div class="db-header">
-                <h1>📊 在庫管理庫</h1>
-                <button onclick="exportToCSV()"
-                    style="background:#fff; color:#000; padding:8px; border-radius:6px; font-weight:bold;">Excel出力</button>
+        <div class="result-container" id="result-box">
+            <div style="font-size: 0.9rem; color: var(--text-sub);">AI 判定ランク</div>
+            <div class="rank-display" id="rank-text">-</div>
+            <div style="font-size: 0.85rem; font-weight: 600;" id="desc-text">Brand & Priceを入力</div>
+
+            <div class="stats-grid">
+                <div class="stat-box"><span class="stat-label">純利益</span><span class="stat-value"
+                        id="profit-text">¥0</span></div>
+                <div class="stat-box"><span class="stat-label">利益率</span><span class="stat-value"
+                        id="margin-text">0%</span></div>
             </div>
-            <div class="db-table-wrapper">
-                <table id="db-table">
-                    <thead>
-                        <tr>
-                            <th>ブランド</th>
-                            <th>収支</th>
-                            <th>日付管理</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="db-body"></tbody>
-                </table>
+
+            <button id="btn-save-db" class="btn" onclick="saveToDatabase()" disabled>💾 在庫DBへストック</button>
+            <button id="btn-line" class="btn" onclick="shareToLine()" style="display:none;">💬 LINEでレポート共有</button>
+
+            <div id="ai-questions-box" class="missing-info-box">
+                <div style="font-size: 0.9rem; color: #00aaff; font-weight: bold; margin-bottom: 8px;">💬 AIからの確認事項
+                </div>
+                <div id="ai-questions-text" style="font-size: 0.85rem;"></div>
+            </div>
+            <div id="sales-strategy-box" class="strategy-box">
+                <div style="font-size: 0.9rem; color: #38ef7d; font-weight: bold; margin-bottom: 8px;">💡 利益拡大・販売戦略
+                </div>
+                <div id="ai-sales-strategy-text" style="font-size: 0.85rem;"></div>
+            </div>
+            <div id="sold-evidence-box" class="sold-evidence-box">
+                <div style="font-size: 0.9rem; color: #ff5722; font-weight: bold; margin-bottom: 8px;">📈
+                    実売（SOLD）データ</div>
+                <div id="ai-sold-evidence" style="font-size: 0.85rem;"></div>
+            </div>
+            <div id="negotiation-result-box" class="negotiation-box">
+                <div style="font-size: 0.9rem; color: #ffd700; font-weight: bold; margin-bottom: 8px;">🏢 業者買取・交渉術
+                </div>
+                <div id="ai-negotiation-text" style="font-size: 0.85rem;"></div>
+            </div>
+            <div id="ai-result-box"
+                style="margin-top:20px; background:rgba(142,45,226,0.1); border:1px solid rgba(142,45,226,0.5); padding:12px; border-radius:8px; text-align:left; display:none;">
+                <div style="font-size:0.9rem; color:#d08aff; font-weight:bold; margin-bottom:8px;">🤖 AI総論</div>
+                <div id="ai-advice-text" style="font-size:0.85rem;"></div>
             </div>
         </div>
+    </div>
+
+    <div id="view-database" class="view-content">
+        <div class="db-header">
+            <h1>📊 在庫管理庫</h1>
+            <button onclick="exportToCSV()"
+                style="background:#fff; color:#000; padding:8px; border-radius:6px; font-weight:bold;">Excel出力</button>
+        </div>
+        <div class="db-table-wrapper">
+            <table id="db-table">
+                <thead>
+                    <tr>
+                        <th>ブランド</th>
+                        <th>収支</th>
+                        <th>日付管理</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="db-body"></tbody>
+            </table>
+        </div>
+    </div>
     </div>
 
     <script>
@@ -610,7 +618,8 @@
             questionsBox: document.getElementById('ai-questions-box'), questionsText: document.getElementById('ai-questions-text'),
             strategyBox: document.getElementById('sales-strategy-box'), strategyText: document.getElementById('ai-sales-strategy-text'),
             soldBox: document.getElementById('sold-evidence-box'), soldText: document.getElementById('ai-sold-evidence'),
-            negotiationBox: document.getElementById('negotiation-result-box'), negotiationText: document.getElementById('ai-negotiation-text')
+            negotiationBox: document.getElementById('negotiation-result-box'), negotiationText: document.getElementById('ai-negotiation-text'),
+            debug: document.getElementById('debug-log')
         };
 
         // APIキー復元
@@ -618,23 +627,11 @@
         if (storedKey) els.apikey.value = storedKey;
         els.apikey.addEventListener('input', () => localStorage.setItem(CONFIG.API_STORE_KEY, els.apikey.value));
 
-        async function testAPIConnection() {
-            if (!els.apikey.value) return alert("キーを入力してください");
-            const btn = document.getElementById('btn-test-api');
-            btn.innerText = "⏳ 通信中...";
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${els.apikey.value.trim()}`);
-                const data = await res.json();
-                if (data.models) {
-                    alert("✅ 接続成功！利用可能なモデルが確認できました。\n\n利用可能な主要モデル: " + data.models.slice(0, 3).map(m => m.name.split('/').pop()).join(', '));
-                } else {
-                    throw new Error(data.error ? data.error.message : "不明なエラー");
-                }
-            } catch (e) {
-                alert("❌ 接続失敗: " + e.message);
-            } finally {
-                btn.innerText = "⚙️ API接続テストを実行";
-            }
+        function log(msg) {
+            console.log(msg);
+            els.debug.style.display = "block";
+            els.debug.innerHTML += `> ${msg}<br>`;
+            els.debug.scrollTop = els.debug.scrollHeight;
         }
 
         function switchTab(id) {
@@ -647,7 +644,7 @@
 
         // 📸 カメラ・画像
         async function handleMultipleUpload(e) {
-            const files = Array.from(e.target.files).slice(0, 15); // プロ仕様として15枚まで拡張
+            const files = Array.from(e.target.files).slice(0, 15);
             els.visionLoader.style.display = "block";
             for (let f of files) {
                 await new Promise(r => {
@@ -657,10 +654,10 @@
                         img.onload = function () {
                             const canvas = document.createElement('canvas');
                             let w = img.width, h = img.height;
-                            if (w > 800) { h *= 800 / w; w = 800; }
+                            if (w > 512) { h *= 512 / w; w = 512; }
                             canvas.width = w; canvas.height = h;
                             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                            const b64 = canvas.toDataURL('image/jpeg', 0.62); // 画質を下げてアップロード高速化 (15枚対応のため)
+                            const b64 = canvas.toDataURL('image/jpeg', 0.55);
                             const t = document.createElement('img'); t.src = b64; t.className = "preview-img";
                             els.previewGallery.appendChild(t); selectedImagesBase64.push(b64.split(',')[1]); r();
                         }
@@ -682,23 +679,27 @@
         async function analyzeMultipleImages() {
             if (!els.apikey.value) return alert("APIキーを入力してください");
             els.btnAiVision.style.display = "none"; els.visionLoader.style.display = "block";
+            els.debug.innerHTML = "[DEBUG CONSOLE]<br>";
+            log("解析開始: 画像 " + selectedImagesBase64.length + " 枚");
 
             const selectedModel = els.model.value;
             const prompt = `アパレルせどりプロとして画像を解析せよ。必ずJSONで返せ。アイテム特定、真贋、SOLD実売検索結果、妥当価格、販売戦略。`;
             const parts = [{ text: prompt + "出力形式: {brand, model, sell_price, advice, missing_info_questions, sales_strategy, sold_evidence, store_negotiation}" }];
             selectedImagesBase64.forEach(b => parts.push({ inline_data: { mime_type: "image/jpeg", data: b } }));
 
-            // プロトコルとエンドポイントの定義
             const apiVersions = ["v1beta", "v1"];
             let lastError = "";
 
             for (const ver of apiVersions) {
+                log(`試行: ${ver} / モデル: ${selectedModel}`);
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒でタイムアウト (通信エラー対策)
+                const timeoutId = setTimeout(() => controller.abort(), 90000); // 90秒に延長
 
                 try {
                     const modelUrl = `https://generativelanguage.googleapis.com/${ver}/models/${selectedModel}:generateContent?key=${els.apikey.value.trim()}`;
-                    els.visionLoader.innerText = `⌛ 解析中... (${ver}経由で通信中)`;
+                    els.visionLoader.innerText = `⌛ 解析中... (${ver}経由で送信中)`;
+                    log("サーバーへデータ送信中... (数MBの画像データ)");
+                    await new Promise(r => setTimeout(r, 100)); // UI更新用
 
                     const res = await fetch(modelUrl, {
                         method: "POST",
@@ -709,17 +710,18 @@
                         })
                     });
                     clearTimeout(timeoutId);
+                    log("レスポンス受信。パース中...");
                     const d = await res.json();
 
                     if (d.error) {
-                        if (d.error.code === 404) {
-                            lastError = d.error.message; continue;
-                        }
+                        log(`エラー受信: ${d.error.code} - ${d.error.message}`);
+                        if (d.error.code === 404) { lastError = d.error.message; continue; }
                         throw new Error(`${d.error.message} (${d.error.code})`);
                     }
                     if (!d.candidates || d.candidates.length === 0) throw new Error("AIの応答が空です。");
 
                     const txt = d.candidates[0].content.parts[0].text;
+                    log("AI回答を受信。データを展開中...");
                     let resJ;
                     try {
                         const jsonMatch = txt.match(/\{[\s\S]*\}/);
@@ -735,17 +737,19 @@
 
                     currentHtmlReport = resJ.advice;
                     calculate();
+                    log("✅ 解析完了");
                     els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
                     return;
 
                 } catch (e) {
                     clearTimeout(timeoutId);
+                    log(`失敗: ${e.name === "AbortError" ? "タイムアウト" : e.message}`);
                     lastError = e.name === "AbortError" ? "通信がタイムアウトしました。電波の良い場所で再度お試しください。" : e.message;
                     if (ver === "v1") break;
                 }
             }
 
-            alert(`🚨 解析に失敗しました。\n\n【詳細】: ${lastError}\n\n※15枚一括でアップロードする場合、電波状況が悪いと時間がかかります。枚数を減らすか、モデルをGemini 2.0等に変更して試してみてください。`);
+            alert(`🚨 解析に失敗しました。\n\n【詳細】: ${lastError}\n\n「使用AIモデル」を別のもの（Gemini 2.0等）に変更するか、枚数を減らしてみてください。`);
             els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
             els.visionLoader.innerText = "⌛ 実売データを抽出中...";
         }
