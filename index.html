@@ -484,6 +484,14 @@
                         <option value="0.05">PayPay (5.0%)</option>
                     </select>
                 </label>
+                <label>使用AIモデル (エラー時は変更してください)
+                    <select id="input-model">
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (推奨・安定)</option>
+                        <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</option>
+                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (高速・最新)</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (超高精度)</option>
+                    </select>
+                </label>
                 <label>ブランド名
                     <input type="text" id="input-brand" placeholder="ブランド名">
                 </label>
@@ -498,6 +506,9 @@
                 <label>Gemini APIキー (一度入力すれば保存されます)
                     <input type="password" id="input-apikey" placeholder="API Key">
                 </label>
+                <button id="btn-test-api" class="btn"
+                    style="background:#444; color:#fff; font-size: 0.8rem; padding:8px;"
+                    onclick="testAPIConnection()">⚙️ API接続テストを実行</button>
                 <button id="btn-mercari" class="btn" onclick="searchMercari()" disabled>🛍 手動相場リサーチ</button>
             </div>
 
