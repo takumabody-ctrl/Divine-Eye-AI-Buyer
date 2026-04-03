@@ -395,7 +395,7 @@
 
                 <div class="res-container">
                     <div class="res-item">
-                        <div class="res-header A">🔥 プロのアドバイス</div>
+                        <div class="res-header A">🔥 投資評価とプロの助言</div>
                         <div class="res-body" id="res-advice"></div>
                     </div>
                     <div class="res-item">
@@ -403,11 +403,15 @@
                         <div class="res-body" id="res-risk"></div>
                     </div>
                     <div class="res-item">
-                        <div class="res-header" style="color:var(--primary)">📈 SOLD実績の裏付け</div>
+                        <div class="res-header" style="color:var(--primary)">📈 SOLD実績の詳細分析</div>
                         <div class="res-body" id="res-sold"></div>
                     </div>
                     <div class="res-item">
-                        <div class="res-header" style="color:var(--warning)">🏢 業者交渉フレーズ</div>
+                        <div class="res-header" style="color:var(--primary)">🚀 最強の販売戦略（撮影・SEO・回転）</div>
+                        <div class="res-body" id="res-strategy"></div>
+                    </div>
+                    <div class="res-item">
+                        <div class="res-header" style="color:var(--warning)">💰 業者買取相場・交渉術</div>
                         <div class="res-body" id="res-negotiation"></div>
                     </div>
                 </div>
@@ -516,15 +520,16 @@
                 if (best) model = best.name.split('/').pop();
             } catch (e) { }
 
-            const prompt = `あなたはプロのアパレルバイヤー兼真贋鑑定士です。必ず以下のJSONのみ返せ: {item_name, search_keyword, estimated_sell_price, estimated_days, final_rank, advice_text, risk_text, sold_text, negotiation_text}
+            const prompt = `あなたはプロのアパレルバイヤー兼真贋鑑定士です。必ず以下のJSONのみ返せ: {item_name, search_keyword, estimated_sell_price, estimated_days, final_rank, advice_text, risk_text, sold_text, strategy_text, dealer_quote_text}
 回答ルール:
 1. 文末は必ず「です・ます」の丁寧語。
 2. 箇条書きを多用し、簡潔に要点をまとめること。
-3. 利益 = 販売予想価格 - (${buy} + 送料 + 販売手数料)。
+3. 利益 = 販売価格 - (${buy} + 送料 + 販売手数料)。
 4. 商品のデザイン、素材、ビッグサイズ、希少性、季節性を加味して査定せよ。
 5. 真贋リスクは具体的チェック箇所を明示せよ。
-6. final_rankは【S, A, B, C】のいずれか。
-7. advice_textには「もし○○円で仕入れられれば...」というプロの背中を押す具体的な助言を含めること。`;
+6. dealer_quote_textには「もし業者（セカスト等）に売却した場合の買取推定額」と「1円でも高く売るための交渉術」を記載せよ。
+7. strategy_text（販売戦略）は極めて重要。「価値を1.5倍に見せる撮影のコツ」「目を引く検索キーワード」「売却期間を短縮する値決めのコツ」を具体的に網羅せよ。
+8. final_rankは【S, A, B, C】のいずれか。`;
 
             const parts = [{ text: prompt }];
             selectedB64.forEach(b => parts.push({ inline_data: { mime_type: "image/jpeg", data: b } }));
@@ -550,8 +555,8 @@
                     document.getElementById('res-days').innerText = `${json.estimated_days || 14} 日`;
                     document.getElementById('res-advice').innerHTML = (json.advice_text || "").replace(/\n/g, '<br>');
                     document.getElementById('res-risk').innerHTML = (json.risk_text || "").replace(/\n/g, '<br>');
-                    document.getElementById('res-sold').innerHTML = (json.sold_text || "").replace(/\n/g, '<br>');
-                    document.getElementById('res-negotiation').innerHTML = (json.negotiation_text || "").replace(/\n/g, '<br>');
+                    document.getElementById('res-strategy').innerHTML = (json.strategy_text || "").replace(/\n/g, '<br>');
+                    document.getElementById('res-negotiation').innerHTML = (json.dealer_quote_text || "").replace(/\n/g, '<br>');
                     document.getElementById('val-search-key').value = json.search_keyword || json.item_name || "";
 
                     document.getElementById('val-sell').value = json.estimated_sell_price || 0;
@@ -571,8 +576,23 @@
             const sell = parseFloat(document.getElementById('val-sell').value) || 0;
             const commission = parseFloat(document.getElementById('val-platform').value);
             const shipping = parseFloat(document.getElementById('val-shipping').value) || 0;
+
+            // 販売価格が未入力または0の場合は「相場不明」とする
+            if (sell <= 0) {
+                document.getElementById('res-profit').innerText = "相場不明";
+                document.getElementById('res-profit').style.color = "var(--text-sub)";
+                return;
+            }
+
             const profit = Math.floor(sell - (sell * commission) - shipping - buy);
             document.getElementById('res-profit').innerText = `¥${profit.toLocaleString()}`;
+
+            // 利益に応じて色を変更（マイナスなら赤＝赤字予告）
+            if (profit > 0) {
+                document.getElementById('res-profit').style.color = "var(--primary)";
+            } else {
+                document.getElementById('res-profit').style.color = "var(--danger)";
+            }
         }
 
         function quickSearch(type) {
