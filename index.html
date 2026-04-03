@@ -486,9 +486,9 @@
                 </label>
                 <label>使用AIモデル (エラー時は変更してください)
                     <select id="input-model">
-                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (推奨・安定)</option>
+                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (高速・最新・推奨)</option>
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (安定)</option>
                         <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</option>
-                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (高速・最新)</option>
                         <option value="gemini-1.5-pro">Gemini 1.5 Pro (超高精度)</option>
                     </select>
                 </label>
@@ -717,7 +717,7 @@
                         signal: controller.signal,
                         body: JSON.stringify({
                             contents: [{ parts: parts }],
-                            tools: (ver === "v1beta") ? [{ google_search_retrieval: {} }] : []
+                            ...(ver === "v1beta" ? { tools: [{ google_search_retrieval: {} }] } : {})
                         })
                     });
                     clearTimeout(timeoutId);
