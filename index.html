@@ -4,806 +4,500 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- PWA / iPhone対応メタタグ -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="神眼AIバイヤー">
-    <meta name="theme-color" content="#121212">
-    <!-- 擬似パース用マニフェスト -->
-    <link rel="manifest"
-        href='data:application/manifest+json;utf-8,{"name":"神眼AIバイヤー","short_name":"AIバイヤー","display":"standalone","background_color":"#121212","theme_color":"#121212"}'>
-
-    <title>神眼AIバイヤー - 爆速仕入れ判定アプリ</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>神眼AIバイヤー - プロ仕様鑑定ツール</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <style>
         :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --surface-light: #2a2a2a;
-            --text-main: #ffffff;
-            --text-sub: #b3b3b3;
-            --border: #333333;
-            --color-s: #ffd700;
-            --color-a: #00ffcc;
-            --color-b: #00aaff;
-            --color-c: #ff4444;
-            --color-none: #555555;
-            --glow-s: rgba(255, 215, 0, 0.4);
-            --glow-a: rgba(0, 255, 204, 0.4);
-            --glow-b: rgba(0, 170, 255, 0.4);
-            --glow-c: rgba(255, 68, 68, 0.4);
-            --line-green: #06c755;
+            --bg: #0d0d0d;
+            --card: #1a1a1a;
+            --primary: #00ffcc;
+            --accent: #8e2de2;
+            --text: #ffffff;
+            --text-sub: #a0a0a0;
+            --danger: #ff4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
             background-color: var(--bg);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            box-sizing: border-box;
-            min-height: 100vh;
+            color: var(--text);
+            margin: 0;
+            padding-bottom: 70px;
             overflow-x: hidden;
         }
 
-        /* 認証画面 */
-        #auth-overlay {
+        h1 {
+            font-size: 1.4rem;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: 1px;
+            color: var(--primary);
+        }
+
+        .container {
+            padding: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* 認証用 */
+        #auth-screen {
             position: fixed;
-            inset: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: var(--bg);
-            z-index: 9999;
             display: flex;
             flex-direction: column;
-            align-items: center;
             justify-content: center;
-            padding: 20px;
-            text-align: center;
+            align-items: center;
+            z-index: 9999;
         }
 
         .auth-card {
-            background: var(--surface);
+            background: var(--card);
             padding: 30px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            width: 100%;
-            max-width: 320px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-        }
-
-        .auth-logo {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-
-        .auth-title {
-            font-size: 1.2rem;
-            font-weight: 800;
-            margin-bottom: 10px;
-            color: var(--color-a);
-        }
-
-        .auth-input {
-            width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: var(--surface-light);
-            color: white;
+            border-radius: 15px;
             text-align: center;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            outline: none;
+            width: 85%;
+            border: 1px solid #333;
         }
 
-        .auth-btn {
-            width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            background: var(--color-a);
-            color: black;
-            font-weight: 800;
-            border: none;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .auth-btn:active {
-            transform: scale(0.95);
-        }
-
-        .pwa-banner {
-            background: linear-gradient(90deg, #ff8a00, #e52e71);
-            color: white;
-            text-align: center;
-            font-size: 0.8rem;
-            padding: 8px;
-            font-weight: bold;
-        }
-
-        .tabs {
-            display: flex;
-            background: var(--surface);
-            border-bottom: 2px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .tab {
-            flex: 1;
-            text-align: center;
-            padding: 15px;
-            font-weight: bold;
-            cursor: pointer;
-            color: var(--text-sub);
-            transition: 0.3s;
-        }
-
-        .tab.active {
-            color: var(--color-a);
-            border-bottom: 3px solid var(--color-a);
-            background: rgba(0, 255, 204, 0.1);
-        }
-
-        .view-content {
-            display: none;
-            padding: 20px;
-            box-sizing: border-box;
-            flex-direction: column;
-            gap: 20px;
-            transition: all 0.4s ease;
-            min-height: calc(100vh - 60px);
-        }
-
-        .view-content.active {
-            display: flex;
-        }
-
-        h1 {
-            font-size: 1.2rem;
-            text-align: center;
-            margin: 0;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
-
-        .section-title {
-            font-size: 0.85rem;
-            color: var(--color-a);
-            margin: 10px 0 5px 0;
-            font-weight: bold;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 5px;
-        }
-
-        .input-group {
-            background-color: var(--surface);
+        /* カード・UI */
+        .card {
+            background: var(--card);
             border-radius: 12px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            border: 1px solid var(--border);
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #222;
         }
 
-        label {
-            font-size: 0.9rem;
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
             color: var(--text-sub);
-            font-weight: 500;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            margin-bottom: 5px;
+            margin-top: 10px;
         }
 
         input,
         select {
-            background-color: var(--surface-light);
-            border: 1px solid var(--border);
-            color: var(--text-main);
+            width: 100%;
             padding: 12px;
+            background: #262626;
+            border: 1px solid #333;
             border-radius: 8px;
+            color: #fff;
             font-size: 1rem;
             outline: none;
-            transition: 0.2s;
-            appearance: none;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        select {
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 1em;
-            padding-right: 40px;
-        }
-
-        .result-container {
-            background-color: var(--surface);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            border: 2px solid var(--color-none);
-            transition: all 0.4s ease;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .rank-display {
-            font-size: 5rem;
-            font-weight: 900;
-            margin: 10px 0;
-            line-height: 1;
-            color: var(--color-none);
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        .stat-box {
-            background-color: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 15px 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-sub);
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
         }
 
         .btn {
-            border: none;
+            width: 100%;
             padding: 15px;
             border-radius: 8px;
+            border: none;
             font-weight: bold;
+            font-size: 1rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: 0.3s;
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 0.95rem;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        #btn-mercari {
-            background-color: #ff0211;
-            color: white;
+            transition: 0.2s;
             margin-top: 10px;
         }
 
-        #btn-ai {
-            background: linear-gradient(135deg, #8e2de2, #4a00e0);
-            color: white;
-            margin-top: 5px;
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: #000;
         }
 
-        #btn-save-db {
-            background: linear-gradient(135deg, #11998e, #38ef7d);
-            color: white;
-            margin-top: 15px;
-        }
-
-        #btn-line {
-            background-color: var(--line-green);
-            color: white;
-            margin-top: 5px;
-            font-size: 0.9rem;
-            padding: 12px;
-        }
-
-        .db-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .db-table-wrapper {
-            overflow-x: auto;
-            background: var(--surface);
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        table {
-            width: 100%;
-            min-width: 800px;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-
-        th,
-        td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .image-upload-wrapper {
-            background: linear-gradient(135deg, #ff007f, #8e2de2);
-            padding: 2px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .image-upload-inner {
-            background: var(--surface);
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-        }
-
-        .camera-label {
-            display: block;
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px dashed rgba(255, 255, 255, 0.3);
-            padding: 20px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
-
+        /* プレビュー */
         .preview-gallery {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
             gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         .preview-img {
-            height: 80px;
-            width: 80px;
+            width: 100%;
+            aspect-ratio: 1;
             object-fit: cover;
-            border-radius: 8px;
-            border: 2px solid var(--border);
+            border-radius: 4px;
+            border: 1px solid #444;
         }
 
-        .negotiation-box {
-            margin-top: 20px;
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: left;
+        /* ローダー */
+        .loader {
+            text-align: center;
+            padding: 20px;
             display: none;
+            color: var(--primary);
+            font-weight: bold;
         }
 
-        .sold-evidence-box {
-            margin-top: 20px;
-            background: rgba(255, 87, 34, 0.1);
-            border: 1px solid rgba(255, 87, 34, 0.5);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: left;
+        /* リザルト */
+        .result-box {
             display: none;
+            margin-top: 15px;
+            border-top: 2px solid var(--accent);
+            padding-top: 15px;
         }
 
-        .missing-info-box {
-            margin-top: 20px;
-            background: rgba(0, 170, 255, 0.1);
-            border: 1px solid rgba(0, 170, 255, 0.4);
-            padding: 15px;
-            border-radius: 8px;
-            text-align: left;
-            display: none;
+        .rank-badge {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 10px;
         }
 
-        .strategy-box {
-            margin-top: 20px;
-            background: rgba(56, 239, 125, 0.1);
-            border: 1px solid rgba(56, 239, 125, 0.4);
-            padding: 15px;
+        .profit-display {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .ai-inner-card {
+            background: rgba(142, 45, 226, 0.1);
+            border: 1px solid rgba(142, 45, 226, 0.3);
+            padding: 12px;
             border-radius: 8px;
-            text-align: left;
+            margin-top: 10px;
+        }
+
+        /* タブバー */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: #111;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #333;
+            z-index: 100;
+        }
+
+        .tab {
+            color: #666;
+            font-size: 0.75rem;
+            text-align: center;
+            text-decoration: none;
+            padding: 10px;
+            flex: 1;
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        /* デバッグログ */
+        #debug-log {
+            font-size: 0.7rem;
+            background: #000;
+            color: #0fbc00;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 8px;
+            height: 120px;
+            overflow-y: auto;
             display: none;
+            font-family: monospace;
+            border: 1px solid #222;
+        }
+
+        /* PWAバナー */
+        .pwa-banner {
+            background: #ff3366;
+            color: #fff;
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 5px;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- パスワード認証画面 -->
-    <div id="auth-overlay">
+    <!-- 認証画面 -->
+    <div id="auth-screen">
         <div class="auth-card">
-            <div class="auth-logo">👁️</div>
-            <div class="auth-title">神眼AIバイヤー</div>
-            <div style="color:var(--text-sub); font-size:0.8rem; margin-bottom:20px;">パスワードを入力してください</div>
-            <input type="password" id="auth-password" class="auth-input" placeholder="Password">
-            <button class="auth-btn" onclick="checkPassword()">ログイン</button>
-            <div id="auth-error" style="color:var(--color-c); margin-top:10px; font-size:0.8rem; display:none;">
-                パスワードが違います</div>
+            <h2 style="color:var(--primary); margin-bottom:10px;">God Eye AI</h2>
+            <p style="font-size:0.8rem; color:var(--text-sub);">パスワードを入力してください</p>
+            <input type="password" id="auth-pass" placeholder="Password">
+            <button class="btn btn-primary" onclick="checkAuth()">Login</button>
         </div>
     </div>
 
-    <div id="app-content" style="display:none;">
-        <div class="pwa-banner" id="pwa-banner" onclick="this.style.display='none'">
-            💡 ブラウザの「共有」ボタン ➡「ホーム画面に追加」で、スマホアプリとして使えます！
+    <div class="pwa-banner">💡 ブラウザの「共有」⇒「ホーム画面に追加」でスマホアプリとして使えます！</div>
+
+    <div class="container" id="main-content" style="display:none;">
+        <div id="view-judge">
+            <h1>🕵️‍♂️ 神眼AIバイヤー</h1>
+
+            <div class="card">
+                <div style="font-weight:bold; margin-bottom:8px;">📸 商品撮影（1〜15枚）</div>
+                <label class="btn" style="background:#333; color:#fff; text-align:center; display:block;"
+                    for="input-img">写真を撮影・選択</label>
+                <input type="file" id="input-img" accept="image/*" multiple style="display:none"
+                    onchange="handleImages(event)">
+                <div class="preview-gallery" id="preview-gallery"></div>
+                <button id="btn-clear"
+                    style="display:none; background:transparent; color:#888; border:none; margin: 10px auto; display:block;"
+                    onclick="clearAll()">🗑 リセット</button>
+            </div>
+
+            <div class="card input-group">
+                <label>API設定 & モデル選択</label>
+                <input type="password" id="api-key" placeholder="Gemini API Key">
+                <select id="model-select" style="margin-top:8px;">
+                    <option value="auto">✨ モデル自動探索 (推奨)</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (最新)</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (安定)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (最高精度)</option>
+                </select>
+                <button class="btn" style="background:#222; color:#fff; font-size:0.75rem; padding:8px;"
+                    onclick="runAPITest()">⚙️ 接続テスト</button>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <label>仕入値<input type="number" id="val-buy" value="0"></label>
+                    <label>見込価格<input type="number" id="val-sell" value="0"></label>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-run" onclick="analyzeImages()">🔥 解析・利益計算を開始</button>
+
+            <div class="loader" id="loader">⌛ <span id="loader-status">データを抽出中...</span></div>
+
+            <div id="debug-log">[DEBUG CONSOLE]<br></div>
+
+            <div class="result-box" id="result-box">
+                <div class="rank-badge" id="res-rank">-</div>
+                <div style="text-align:center; font-size:0.8rem; color:var(--text-sub);" id="res-name">アイテム特定中...</div>
+                <div class="profit-display" id="res-profit">¥0</div>
+
+                <div class="ai-inner-card">
+                    <div style="color:var(--primary); font-size:0.85rem; font-weight:bold; margin-bottom:5px;">🤖
+                        プロ鑑定アドバイス</div>
+                    <div id="res-advice" style="font-size:0.85rem; line-height:1.4;"></div>
+                </div>
+
+                <div id="res-strategy-box" class="ai-inner-card" style="border-color:#38ef7d;">
+                    <div style="color:#38ef7d; font-size:0.85rem; font-weight:bold;">💡 販売戦略</div>
+                    <div id="res-strategy" style="font-size:0.85rem;"></div>
+                </div>
+
+                <div id="res-sold-box" class="ai-inner-card" style="border-color:#ff5722;">
+                    <div style="color:#ff5722; font-size:0.85rem; font-weight:bold;">📈 実売（SOLD）データ</div>
+                    <div id="res-sold" style="font-size:0.8rem;"></div>
+                </div>
+
+                <button class="btn" style="background:#00c853; color:#fff;" onclick="shareToLine()">💬
+                    LINEで判定を送る</button>
+                <button class="btn" style="background:#555; color:#fff;" onclick="saveToStock()">💾 在庫リストに保存</button>
+            </div>
+
+            <div style="text-align:center; margin-top:20px; font-size:0.6rem; color:#444;">Ver 1.3.1 - Global Master
+                Edition</div>
         </div>
 
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('view-research')">🔍 判定</div>
-            <div class="tab" onclick="switchTab('view-database')">📊 データ庫</div>
-        </div>
-
-        <div id="view-research" class="view-content active">
-            <h1>📱 神眼AIバイヤー</h1>
-
-            <div class="image-upload-wrapper">
-                <div class="image-upload-inner">
-                    <div style="font-size: 1rem; font-weight: 800; margin-bottom: 5px; color: #fff;">🕵️‍♂️ プロ鑑定 ＆
-                        実売AI自動計算</div>
-                    <div style="font-size:0.7rem; color:var(--text-sub); margin-bottom:12px;">
-                        写真を撮るだけでAIが商品を特定。実際の「SOLD履歴」から利益を弾き出します。</div>
-                    <label class="camera-label" for="input-media">📸 写真を撮影・追加</label>
-                    <input type="file" id="input-media" accept="image/*" multiple style="display:none;"
-                        onchange="handleMultipleUpload(event)">
-                    <div class="preview-gallery" id="preview-gallery"></div>
-                    <div class="controls-row">
-                        <button id="btn-clear-img" class="btn"
-                            style="background:#555; color:white; flex: 1; display:none; padding:10px; margin-top:10px;"
-                            onclick="clearImages()">🗑 クリア</button>
-                    </div>
-                    <button id="btn-ai-vision" class="btn"
-                        style="background:#00ffcc; color:#000; margin-top:10px; display:none;"
-                        onclick="analyzeMultipleImages()">🔍 解析・利益計算を実行</button>
-                    <div id="vision-loader"
-                        style="display: none; margin-top: 15px; color: #00ffcc; font-size: 0.9rem; font-weight: bold;">⌛
-                        実売データを抽出中...</div>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label>販売手数料
-                    <select id="input-platform">
-                        <option value="0.10">メルカリ (10%)</option>
-                        <option value="0.088">ヤフオク (8.8%)</option>
-                        <option value="0.06">ラクマ (6.0%)</option>
-                        <option value="0.05">PayPay (5.0%)</option>
-                    </select>
-                </label>
-                <label>使用AIモデル (エラー時は変更してください)
-                    <select id="input-model">
-                        <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (高速・最新・推奨)</option>
-                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (安定)</option>
-                        <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash Latest</option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (超高精度)</option>
-                    </select>
-                </label>
-                <label>ブランド名
-                    <input type="text" id="input-brand" placeholder="ブランド名">
-                </label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <label>仕入値 (円)<input type="number" id="input-buy" value="0" inputmode="numeric"></label>
-                    <label>見込販売 (円)<input type="number" id="input-sell" value="0" inputmode="numeric"></label>
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <label>送料 (円)<input type="number" id="input-shipping" value="750" inputmode="numeric"></label>
-                    <label>梱包費 (円)<input type="number" id="input-packing" value="90" inputmode="numeric"></label>
-                </div>
-                <label>Gemini APIキー (一度入力すれば保存されます)
-                    <input type="password" id="input-apikey" placeholder="API Key">
-                </label>
-                <button id="btn-test-api" class="btn"
-                    style="background:#444; color:#fff; font-size: 0.8rem; padding:8px;"
-                    onclick="testAPIConnection()">⚙️ API接続テストを実行</button>
-                <button id="btn-mercari" class="btn" onclick="searchMercari()" disabled>🛍 手動相場リサーチ</button>
-            </div>
-
-            <div id="debug-log"
-                style="font-size: 0.7rem; background: #000; color: #0f0; padding: 10px; margin-top: 20px; border-radius: 5px; height: 100px; overflow-y: auto; display: none; font-family: monospace;">
-                [DEBUG CONSOLE]<br>
-            </div>
-            <div style="text-align: center; font-size: 0.65rem; color: #888; margin-top: 10px; font-weight: bold;">
-                Ver 1.2.3 (Final Stable Fix)
-            </div>
-        </div>
-
-        <div class="result-container" id="result-box">
-            <div style="font-size: 0.9rem; color: var(--text-sub);">AI 判定ランク</div>
-            <div class="rank-display" id="rank-text">-</div>
-            <div style="font-size: 0.85rem; font-weight: 600;" id="desc-text">Brand & Priceを入力</div>
-
-            <div class="stats-grid">
-                <div class="stat-box"><span class="stat-label">純利益</span><span class="stat-value"
-                        id="profit-text">¥0</span></div>
-                <div class="stat-box"><span class="stat-label">利益率</span><span class="stat-value"
-                        id="margin-text">0%</span></div>
-            </div>
-
-            <button id="btn-save-db" class="btn" onclick="saveToDatabase()" disabled>💾 在庫DBへストック</button>
-            <button id="btn-line" class="btn" onclick="shareToLine()" style="display:none;">💬 LINEでレポート共有</button>
-
-            <div id="ai-questions-box" class="missing-info-box">
-                <div style="font-size: 0.9rem; color: #00aaff; font-weight: bold; margin-bottom: 8px;">💬 AIからの確認事項
-                </div>
-                <div id="ai-questions-text" style="font-size: 0.85rem;"></div>
-            </div>
-            <div id="sales-strategy-box" class="strategy-box">
-                <div style="font-size: 0.9rem; color: #38ef7d; font-weight: bold; margin-bottom: 8px;">💡 利益拡大・販売戦略
-                </div>
-                <div id="ai-sales-strategy-text" style="font-size: 0.85rem;"></div>
-            </div>
-            <div id="sold-evidence-box" class="sold-evidence-box">
-                <div style="font-size: 0.9rem; color: #ff5722; font-weight: bold; margin-bottom: 8px;">📈
-                    実売（SOLD）データ</div>
-                <div id="ai-sold-evidence" style="font-size: 0.85rem;"></div>
-            </div>
-            <div id="negotiation-result-box" class="negotiation-box">
-                <div style="font-size: 0.9rem; color: #ffd700; font-weight: bold; margin-bottom: 8px;">🏢 業者買取・交渉術
-                </div>
-                <div id="ai-negotiation-text" style="font-size: 0.85rem;"></div>
-            </div>
-            <div id="ai-result-box"
-                style="margin-top:20px; background:rgba(142,45,226,0.1); border:1px solid rgba(142,45,226,0.5); padding:12px; border-radius:8px; text-align:left; display:none;">
-                <div style="font-size:0.9rem; color:#d08aff; font-weight:bold; margin-bottom:8px;">🤖 AI総論</div>
-                <div id="ai-advice-text" style="font-size:0.85rem;"></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="view-database" class="view-content">
-        <div class="db-header">
+        <div id="view-db" style="display:none;">
             <h1>📊 在庫管理庫</h1>
-            <button onclick="exportToCSV()"
-                style="background:#fff; color:#000; padding:8px; border-radius:6px; font-weight:bold;">Excel出力</button>
-        </div>
-        <div class="db-table-wrapper">
-            <table id="db-table">
-                <thead>
-                    <tr>
-                        <th>ブランド</th>
-                        <th>収支</th>
-                        <th>日付管理</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="db-body"></tbody>
-            </table>
+            <div id="db-list"></div>
         </div>
     </div>
+
+    <div class="tab-bar" id="tab-bar" style="display:none;">
+        <a href="#" class="tab active" onclick="switchView('judge')">判定室</a>
+        <a href="#" class="tab" onclick="switchView('db')">在庫庫</a>
     </div>
 
     <script>
-        // 🎭 設定
-        const CONFIG = {
-            PASS: "s9mxp3ao7kj1", // note販売時の配布パスワード
-            API_STORE_KEY: "GEMINI_API_KEY_APL_PRO"
-        };
+        const PASS = "s9mxp3ao7kj1";
+        let selectedB64 = [];
+        let inventory = JSON.parse(localStorage.getItem('GOD_EYE_DB') || '[]');
 
-        // 🚀 認証ロジック
-        function checkPassword() {
-            const input = document.getElementById('auth-password').value;
-            if (input === CONFIG.PASS) {
-                localStorage.setItem('AUTH_GOD_EYE', 'true');
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('app-content').style.display = 'block';
-            } else {
-                document.getElementById('auth-error').style.display = 'block';
-            }
-        }
-        // 初回読み込み
-        if (localStorage.getItem('AUTH_GOD_EYE') === 'true') {
-            document.getElementById('auth-overlay').style.display = 'none';
-            document.getElementById('app-content').style.display = 'block';
+        function checkAuth() {
+            if (document.getElementById('auth-pass').value === PASS) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                document.getElementById('tab-bar').style.display = 'flex';
+                // APIキー復元
+                const k = localStorage.getItem('GOD_EYE_API');
+                if (k) document.getElementById('api-key').value = k;
+            } else { alert("不正なパスワードです"); }
         }
 
-        // 🧠 ロジック変数
-        let inventoryDB = JSON.parse(localStorage.getItem('INVENTORY_DB_PRO')) || [];
-        let selectedImagesBase64 = [];
-        let currentCalculatedData = null;
-        let currentHtmlReport = "";
-
-        const els = {
-            apikey: document.getElementById('input-apikey'), platform: document.getElementById('input-platform'),
-            model: document.getElementById('input-model'),
-            brand: document.getElementById('input-brand'), buy: document.getElementById('input-buy'), sell: document.getElementById('input-sell'),
-            shipping: document.getElementById('input-shipping'), packing: document.getElementById('input-packing'),
-            rank: document.getElementById('rank-text'), profit: document.getElementById('profit-text'),
-            margin: document.getElementById('margin-text'), desc: document.getElementById('desc-text'),
-            resultBox: document.getElementById('result-box'), visionLoader: document.getElementById('vision-loader'),
-            previewGallery: document.getElementById('preview-gallery'), btnAiVision: document.getElementById('btn-ai-vision'),
-            btnClearImg: document.getElementById('btn-clear-img'), aiBox: document.getElementById('ai-result-box'),
-            aiText: document.getElementById('ai-advice-text'), btnLine: document.getElementById('btn-line'),
-            questionsBox: document.getElementById('ai-questions-box'), questionsText: document.getElementById('ai-questions-text'),
-            strategyBox: document.getElementById('sales-strategy-box'), strategyText: document.getElementById('ai-sales-strategy-text'),
-            soldBox: document.getElementById('sold-evidence-box'), soldText: document.getElementById('ai-sold-evidence'),
-            negotiationBox: document.getElementById('negotiation-result-box'), negotiationText: document.getElementById('ai-negotiation-text'),
-            debug: document.getElementById('debug-log')
-        };
-
-        // APIキー復元
-        const storedKey = localStorage.getItem(CONFIG.API_STORE_KEY);
-        if (storedKey) els.apikey.value = storedKey;
-        els.apikey.addEventListener('input', () => localStorage.setItem(CONFIG.API_STORE_KEY, els.apikey.value));
-
-        function log(msg) {
-            console.log(msg);
-            els.debug.style.display = "block";
-            els.debug.innerHTML += `> ${msg}<br>`;
-            els.debug.scrollTop = els.debug.scrollHeight;
+        function log(m) {
+            const d = document.getElementById('debug-log');
+            d.style.display = 'block';
+            d.innerHTML += `> ${m}<br>`;
+            d.scrollTop = d.scrollHeight;
         }
 
-        function switchTab(id) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.view-content').forEach(v => v.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            document.getElementById(id).classList.add('active');
-            if (id === 'view-database') renderDB();
-        }
-
-        // 📸 カメラ・画像
-        async function handleMultipleUpload(e) {
+        async function handleImages(e) {
             const files = Array.from(e.target.files).slice(0, 15);
-            els.visionLoader.style.display = "block";
+            document.getElementById('loader').style.display = 'block';
             for (let f of files) {
                 await new Promise(r => {
                     const reader = new FileReader();
-                    reader.onload = function (ev) {
+                    reader.onload = ev => {
                         const img = new Image();
-                        img.onload = function () {
+                        img.onload = () => {
                             const canvas = document.createElement('canvas');
                             let w = img.width, h = img.height;
                             if (w > 512) { h *= 512 / w; w = 512; }
                             canvas.width = w; canvas.height = h;
                             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                             const b64 = canvas.toDataURL('image/jpeg', 0.55);
-                            const t = document.createElement('img'); t.src = b64; t.className = "preview-img";
-                            els.previewGallery.appendChild(t); selectedImagesBase64.push(b64.split(',')[1]); r();
-                        }
+                            selectedB64.push(b64.split(',')[1]);
+                            const thumb = document.createElement('img'); thumb.src = b64; thumb.className = 'preview-img';
+                            document.getElementById('preview-gallery').appendChild(thumb);
+                            r();
+                        };
                         img.src = ev.target.result;
-                    }
+                    };
                     reader.readAsDataURL(f);
                 });
             }
-            els.visionLoader.style.display = "none";
-            if (selectedImagesBase64.length) { els.btnAiVision.style.display = "block"; els.btnClearImg.style.display = "block"; }
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('btn-clear').style.display = 'block';
         }
 
-        function clearImages() {
-            selectedImagesBase64 = []; els.previewGallery.innerHTML = "";
-            els.btnAiVision.style.display = "none"; els.btnClearImg.style.display = "none";
+        function clearAll() {
+            selectedB64 = [];
+            document.getElementById('preview-gallery').innerHTML = "";
+            document.getElementById('result-box').style.display = 'none';
+            document.getElementById('debug-log').innerHTML = "[DEBUG CONSOLE]<br>";
         }
 
-        // 🕵️‍♂️ AI解析
-        async function analyzeMultipleImages() {
-            if (!els.apikey.value) return alert("APIキーを入力してください");
-            els.btnAiVision.style.display = "none"; els.visionLoader.style.display = "block";
-            els.debug.innerHTML = "[DEBUG CONSOLE]<br>";
-            log("解析開始: 画像 " + selectedImagesBase64.length + " 枚");
+        async function runAPITest() {
+            const k = document.getElementById('api-key').value.trim();
+            if (!k) return alert("Keyを入力してください");
+            log("API接続テスト開始...");
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${k}`);
+                const data = await res.json();
+                if (data.models) {
+                    const list = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent")).map(m => m.name.split('/').pop());
+                    log("✅ 成功。利用可能: " + list.slice(0, 4).join(', '));
+                    alert("接続成功！\n" + list.slice(0, 4).join('\n'));
+                } else { throw new Error(data.error?.message || "Error"); }
+            } catch (e) { log("❌ 失敗: " + e.message); alert("失敗: " + e.message); }
+        }
 
-            const selectedModel = els.model.value;
-            const prompt = `アパレルせどりプロとして画像を解析せよ。必ずJSONで返せ。アイテム特定、真贋、SOLD実売検索結果、妥当価格、販売戦略。`;
-            const parts = [{ text: prompt + "出力形式: {brand, model, sell_price, advice, missing_info_questions, sales_strategy, sold_evidence, store_negotiation}" }];
-            selectedImagesBase64.forEach(b => parts.push({ inline_data: { mime_type: "image/jpeg", data: b } }));
+        async function analyzeImages() {
+            const key = document.getElementById('api-key').value.trim();
+            if (!key) return alert("APIキーを入力してください");
+            if (selectedB64.length === 0) return alert("写真を撮影してください");
 
-            const apiVersions = ["v1beta", "v1"];
-            let lastError = "";
+            localStorage.setItem('GOD_EYE_API', key);
+            document.getElementById('btn-run').style.display = "none";
+            document.getElementById('loader').style.display = "block";
+            document.getElementById('result-box').style.display = "none";
+            log("--- 解析開始 (" + selectedB64.length + "枚) ---");
 
-            for (const ver of apiVersions) {
-                log(`試行: ${ver} / モデル: ${selectedModel}`);
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 90000); // 90秒に延長
-
+            // モデル探索
+            let model = document.getElementById('model-select').value;
+            if (model === "auto") {
+                log("最適なモデルを探索中...");
                 try {
-                    const modelUrl = `https://generativelanguage.googleapis.com/${ver}/models/${selectedModel}:generateContent?key=${els.apikey.value.trim()}`;
-                    els.visionLoader.innerText = `⌛ 解析中... (${ver}経由で送信中)`;
-                    log("サーバーへデータ送信中... (数MBの画像データ)");
-                    await new Promise(r => setTimeout(r, 100)); // UI更新用
-
-                    const res = await fetch(modelUrl, {
-                        method: "POST",
-                        signal: controller.signal,
-                        body: JSON.stringify(
-                            (ver === "v1beta") ?
-                                { contents: [{ parts: parts }], tools: [{ google_search_retrieval: {} }] } :
-                                { contents: [{ parts: parts }] }
-                        )
-                    });
-                    clearTimeout(timeoutId);
-                    log("レスポンス受信。パース中...");
-                    const d = await res.json();
-
-                    if (d.error) {
-                        log(`エラー受信: ${d.error.code} - ${d.error.message}`);
-                        if (d.error.code === 404) { lastError = d.error.message; continue; }
-                        throw new Error(`${d.error.message} (${d.error.code})`);
-                    }
-                    if (!d.candidates || d.candidates.length === 0) throw new Error("AIの応答が空です。");
-
-                    const txt = d.candidates[0].content.parts[0].text;
-                    log("AI回答を受信。データを展開中...");
-                    let resJ;
-                    try {
-                        const jsonMatch = txt.match(/\{[\s\S]*\}/);
-                        resJ = JSON.parse(jsonMatch ? jsonMatch[0] : txt);
-                    } catch (e) { throw new Error("AIの回答形式が不正です。"); }
-
-                    els.brand.value = resJ.brand || ""; els.sell.value = resJ.sell_price || 0;
-                    els.aiText.innerHTML = resJ.advice || "判定なし"; els.aiBox.style.display = "block";
-                    els.questionsText.innerHTML = resJ.missing_info_questions || "-"; els.questionsBox.style.display = "block";
-                    els.strategyText.innerHTML = resJ.sales_strategy || "-"; els.strategyBox.style.display = "block";
-                    els.soldText.innerHTML = resJ.sold_evidence || "-"; els.soldBox.style.display = "block";
-                    els.negotiationText.innerHTML = resJ.store_negotiation || "-"; els.negotiationBox.style.display = "block";
-
-                    currentHtmlReport = resJ.advice;
-                    calculate();
-                    log("✅ 解析完了");
-                    els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
-                    return;
-
-                } catch (e) {
-                    clearTimeout(timeoutId);
-                    log(`失敗: ${e.name === "AbortError" ? "タイムアウト" : e.message}`);
-                    lastError = e.name === "AbortError" ? "通信がタイムアウトしました。電波の良い場所で再度お試しください。" : e.message;
-                    if (ver === "v1") break;
-                }
+                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                    const d = await r.json();
+                    const best = d.models.find(m => m.name.includes("flash-exp") || m.name.includes("flash"));
+                    model = best ? best.name.split('/').pop() : "gemini-1.5-flash";
+                    log("👉 選定モデル: " + model);
+                } catch (e) { model = "gemini-1.5-flash"; }
             }
 
-            alert(`🚨 解析に失敗しました。\n\n【詳細】: ${lastError}\n\n「使用AIモデル」を別のもの（Gemini 2.0等）に変更するか、枚数を減らしてみてください。`);
-            els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
-            els.visionLoader.innerText = "⌛ 実売データを抽出中...";
+            const prompt = "アパレルせどりプロとして画像を解析せよ。必ず以下のJSONのみで返せ: {item_name, brand, sell_price, advice, strategy, sold_evidence, rank}";
+            const parts = [{ text: prompt }];
+            selectedB64.forEach(b => parts.push({ inline_data: { mime_type: "image/jpeg", data: b } }));
+
+            const versions = ["v1beta", "v1"];
+            for (let ver of versions) {
+                log(`試行: ${ver} / ${model}`);
+                document.getElementById('loader-status').innerText = `${ver} 経由でAI鑑定中...`;
+                try {
+                    const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${key}`;
+                    const payload = { contents: [{ parts: parts }] };
+                    if (ver === "v1beta") {
+                        payload.tools = [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "MODE_DYNAMIC", dynamic_threshold: 0.3 } } }];
+                    }
+                    const res = await fetch(url, { method: "POST", body: JSON.stringify(payload) });
+                    const data = await res.json();
+                    if (data.error) {
+                        log(`エラー(${ver}): ${data.error.message}`);
+                        if (data.error.code === 404) continue;
+                        throw new Error(data.error.message);
+                    }
+                    const txt = data.candidates[0].content.parts[0].text;
+                    const json = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
+
+                    // 表示反映
+                    document.getElementById('res-rank').innerText = json.rank || "A";
+                    document.getElementById('res-name').innerText = json.item_name || "-";
+                    document.getElementById('res-advice').innerHTML = (json.advice || "").replace(/\n/g, '<br>');
+                    document.getElementById('res-strategy').innerText = json.strategy || "-";
+                    document.getElementById('res-sold').innerText = json.sold_evidence || "-";
+
+                    // 利益計算
+                    const buy = parseFloat(document.getElementById('val-buy').value) || 0;
+                    const sell = json.sell_price || parseFloat(document.getElementById('val-sell').value) || 0;
+                    const profit = Math.floor(sell * 0.9 - buy - 800); // ざっくり計算
+                    document.getElementById('res-profit').innerText = `利益予測 ¥${profit.toLocaleString()}`;
+
+                    document.getElementById('result-box').style.display = "block";
+                    log("✅ 解析完了");
+                    break;
+                } catch (e) {
+                    log(`失敗: ${e.message}`);
+                    if (ver === "v1") alert("全通信路でエラーが発生しました。キーや電波を確認してください。");
+                }
+            }
+            document.getElementById('loader').style.display = "none";
+            document.getElementById('btn-run').style.display = "block";
         }
 
-        function calculate() {
-            const b = parseFloat(els.buy.value) || 0, s = parseFloat(els.sell.value) || 0;
-            const f = parseFloat(els.platform.value), sh = parseFloat(els.shipping.value), p = parseFloat(els.packing.value);
-            if (!s) return;
-            const profit = Math.floor(s - (s * f) - sh - p - b);
-            els.profit.innerText = `¥${profit.toLocaleString()}`;
-            els.margin.innerText = `${((profit / s) * 100).toFixed(1)}%`;
-            currentCalculatedData = { brand: els.brand.value, profit: profit, buy: b, sell: s };
-
-            const rank = profit > 5000 ? "S" : profit > 2000 ? "A" : profit > 500 ? "B" : "C";
-            els.rank.innerText = rank;
-            els.rank.style.color = rank === "S" ? "#ffd700" : rank === "A" ? "#00ffcc" : rank === "B" ? "#00aaff" : "#ff4444";
-            document.getElementById('btn-save-db').disabled = false; document.getElementById('btn-line').style.display = "block";
-        }
-
-        function shareToLine() {
-            const t = `【神眼AIレポート】\nブランド: ${els.brand.value}\n判定: ${els.rank.innerText}\n利益: ¥${els.profit.innerText}\n---\n${currentHtmlReport.replace(/<[^>]+>/g, '')}`;
-            window.open(`https://line.me/R/msg/text/?${encodeURIComponent(t)}`);
-        }
-
-        function saveToDatabase() {
-            inventoryDB.unshift({ id: Date.now(), ...currentCalculatedData, date: new Date().toLocaleDateString() });
-            localStorage.setItem('INVENTORY_DB_PRO', JSON.stringify(inventoryDB));
-            alert("ストックしました");
+        function switchView(v) {
+            document.getElementById('view-judge').style.display = v === 'judge' ? 'block' : 'none';
+            document.getElementById('view-db').style.display = v === 'db' ? 'block' : 'none';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchView('${v}')"]`).classList.add('active');
+            if (v === 'db') renderDB();
         }
 
         function renderDB() {
-            const b = document.getElementById('db-body'); b.innerHTML = "";
-            inventoryDB.forEach(i => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${i.brand}</td><td>¥${i.profit.toLocaleString()}</td><td>${i.date}</td><td><button onclick="deleteBox(${i.id})">❌</button></td>`;
-                b.appendChild(tr);
+            const list = document.getElementById('db-list');
+            list.innerHTML = inventory.length ? "" : "<p style='text-align:center; color:#555;'>履歴はありません</p>";
+            inventory.forEach((item, idx) => {
+                const d = document.createElement('div'); d.className = 'card';
+                d.innerHTML = `<b>${item.name}</b><br><span style="color:var(--primary)">${item.profit}</span><br><small>${item.date}</small>
+                <button onclick="delDB(${idx})" style="float:right; background:none; border:none; color:red;">❌</button>`;
+                list.appendChild(d);
             });
         }
-        function deleteBox(id) { inventoryDB = inventoryDB.filter(i => i.id !== id); localStorage.setItem('INVENTORY_DB_PRO', JSON.stringify(inventoryDB)); renderDB(); }
-
-        [els.buy, els.sell].forEach(e => e.addEventListener('input', calculate));
+        function saveToStock() {
+            const name = document.getElementById('res-name').innerText;
+            const profit = document.getElementById('res-profit').innerText;
+            inventory.unshift({ name, profit, date: new Date().toLocaleDateString() });
+            localStorage.setItem('GOD_EYE_DB', JSON.stringify(inventory));
+            alert("保存しました");
+        }
+        function delDB(i) { inventory.splice(i, 1); localStorage.setItem('GOD_EYE_DB', JSON.stringify(inventory)); renderDB(); }
+        function shareToLine() {
+            const msg = `【神眼AI鑑定】\n商品: ${document.getElementById('res-name').innerText}\n判定: ${document.getElementById('res-rank').innerText}\n${document.getElementById('res-profit').innerText}`;
+            window.open(`https://line.me/R/msg/text/?${encodeURIComponent(msg)}`);
+        }
     </script>
 </body>
 
