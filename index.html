@@ -16,6 +16,7 @@
             --text: #ffffff;
             --text-sub: #a0a0a0;
             --danger: #ff4444;
+            --warning: #ffd700;
         }
 
         * {
@@ -157,10 +158,19 @@
         }
 
         .rank-badge {
-            font-size: 2.7rem;
+            font-size: 4rem;
             font-weight: 800;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+
+        .rank-label {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-sub);
+            margin-bottom: 15px;
+            font-weight: bold;
         }
 
         .profit-display {
@@ -177,6 +187,15 @@
             padding: 14px;
             border-radius: 8px;
             margin-top: 12px;
+        }
+
+        .target-price-box {
+            background: linear-gradient(135deg, #2c3e50, #000);
+            border: 2px solid var(--warning);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 15px 0;
         }
 
         /* タブバー */
@@ -210,19 +229,18 @@
             border-top: 2px solid var(--primary);
         }
 
-        /* デバッグログ */
         #debug-log {
             font-size: 0.7rem;
-            background: #000;
+            background: #222;
             color: #0fbc00;
             padding: 10px;
             margin-top: 20px;
             border-radius: 8px;
-            height: 120px;
+            height: 100px;
             overflow-y: auto;
             display: none;
             font-family: monospace;
-            border: 1px solid #222;
+            border: 1px solid #444;
         }
     </style>
 </head>
@@ -245,25 +263,29 @@
 
     <div class="container" id="main-content" style="display:none;">
         <div id="view-judge">
-            <h1>� 神眼AIバイヤー</h1>
+            <h1>🕵️‍♂️ 神眼AIプロ鑑定</h1>
 
             <div class="card">
-                <div style="font-size:0.95rem; font-weight:bold; margin-bottom:8px;">📸 商品撮影・鑑定（最大15枚）</div>
-                <label class="btn btn-sub" style="text-align:center; display:block;" for="input-img">写真を撮影・追加</label>
+                <div style="font-size:0.95rem; font-weight:bold; margin-bottom:8px;">📸 商品画像から「買い値」を導く</div>
+                <label class="btn btn-sub" style="text-align:center; display:block;" for="input-img">写真を最大15枚追加</label>
                 <input type="file" id="input-img" accept="image/*" multiple style="display:none"
                     onchange="handleImages(event)">
                 <div class="preview-gallery" id="preview-gallery"></div>
                 <button id="btn-clear"
                     style="display:none; background:transparent; color:#888; border:none; margin: 10px auto; font-size:0.75rem;"
-                    onclick="clearAll()">🗑 写真をすべてクリア</button>
+                    onclick="clearAll()">🗑 一旦リセット</button>
 
                 <button class="btn btn-primary" id="btn-run" onclick="analyzeImages()"
-                    style="margin-top:15px; display:none;">🔍 AI鑑定・実売検索を開始</button>
+                    style="margin-top:15px; display:none;">🔍 AI鑑定 & 適正価格を調査</button>
                 <div class="loader" id="loader">⌛ <span id="loader-status">データを抽出中...</span></div>
             </div>
 
             <div class="card input-group">
-                <label>販売手数料</label>
+                <div
+                    style="font-size:0.85rem; font-weight:bold; color:var(--primary); margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:5px;">
+                    📋 現場シミュレーター</div>
+
+                <label>プラットフォーム</label>
                 <select id="val-platform">
                     <option value="0.10">メルカリ (10%)</option>
                     <option value="0.088">ヤフオク (8.8%)</option>
@@ -271,8 +293,8 @@
                 </select>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <label>仕入値 (円)<input type="number" id="val-buy" value="0"></label>
-                    <label>見込価格 (円)<input type="number" id="val-sell" value="0"></label>
+                    <label>仕入価格 (今ある値札)<input type="number" id="val-buy" value="0"></label>
+                    <label>売却目標 (想定相場)<input type="number" id="val-sell" value="0"></label>
                 </div>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -280,81 +302,77 @@
                     <label>梱包費 (円)<input type="number" id="val-packing" value="90"></label>
                 </div>
 
-                <label>ブランド名 (AIが自動入力します)</label>
-                <input type="text" id="val-brand" placeholder="ブランド名">
-
                 <label>Gemini APIキー</label>
                 <input type="password" id="api-key" placeholder="API Key">
-                <select id="model-select" style="margin-top:8px;">
-                    <option value="auto">✨ モデル自動探索 (推奨)</option>
-                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (最新)</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (安定)</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (超高精度)</option>
-                </select>
                 <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button class="btn btn-sub" style="flex:1;" onclick="runAPITest()">⚙️ 接続テスト</button>
-                    <button class="btn btn-sub" style="flex:1; background:#8e2de2;" onclick="manualReserch()">🛍
-                        メルカリ市場調査</button>
+                    <button class="btn btn-sub" style="flex:1;" onclick="runAPITest()">⚙️ テスト</button>
+                    <button class="btn btn-sub" style="flex:2; background:#8e2de2;" onclick="manualReserch()">🛍
+                        市場を手動リサーチ</button>
                 </div>
+                <input type="hidden" id="val-brand">
             </div>
 
             <div id="debug-log">[DEBUG CONSOLE]<br></div>
 
             <div class="result-box" id="result-box">
                 <div class="rank-badge" id="res-rank">-</div>
-                <div style="text-align:center; font-size:0.9rem; color:var(--text-sub); border-bottom: 1px solid #333; padding-bottom:10px;"
-                    id="res-name">アイテム特定済み</div>
+                <div class="rank-label">🔥 プロの仕入れ推奨判定</div>
+
+                <div class="target-price-box">
+                    <div style="font-size:0.8rem; color:var(--warning); font-weight:bold;">🎯 AI推奨！この金額以下なら即買い</div>
+                    <div id="res-target-buy" style="font-size:1.8rem; font-weight:bold; color:#fff;">¥0</div>
+                    <div id="res-target-desc" style="font-size:0.75rem; color:#ccc; margin-top:5px;">相場と利益率から逆算</div>
+                </div>
+
+                <div style="text-align:center; font-size:0.9rem; font-weight:bold; color:var(--text-sub);"
+                    id="res-name">-</div>
                 <div class="profit-display" id="res-profit">¥0</div>
                 <div style="text-align:center; font-size:0.8rem; color:#38ef7d; margin-bottom:10px;" id="res-margin">利益率
                     0%</div>
 
                 <div class="ai-inner-card">
-                    <div style="color:var(--primary); font-size:0.9rem; font-weight:bold; margin-bottom:5px;">🤖
-                        AIプロ鑑定総論</div>
-                    <div id="res-advice" style="font-size:0.85rem; line-height:1.5;"></div>
+                    <div style="color:var(--primary); font-size:0.9rem; font-weight:bold; margin-bottom:8px;">🤖 なぜこの判定？
+                        (具体的アドバイス)</div>
+                    <div id="res-advice" style="font-size:0.85rem; line-height:1.6;"></div>
                 </div>
 
                 <div id="res-questions-box" class="ai-inner-card" style="border-color:#00aaff; display:none;">
-                    <div style="color:#00aaff; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">💬 AIからの確認事項
+                    <div style="color:#00aaff; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">💬 AIからの最終確認
                     </div>
                     <div id="res-questions" style="font-size:0.85rem;"></div>
                 </div>
 
-                <div id="res-strategy-box" class="ai-inner-card" style="border-color:#38ef7d;">
-                    <div style="color:#38ef7d; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">💡 高利益販売・セット戦略
+                <div class="ai-inner-card" style="border-color:#38ef7d;">
+                    <div style="color:#38ef7d; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">💡 高利益への販売ロードマップ
                     </div>
                     <div id="res-strategy" style="font-size:0.85rem;"></div>
                 </div>
 
-                <div id="res-sold-box" class="ai-inner-card" style="border-color:#ff5722;">
-                    <div style="color:#ff5722; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">📈 実売（SOLD）データ根拠
-                    </div>
+                <div class="ai-inner-card" style="border-color:#ff5722;">
+                    <div style="color:#ff5722; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">📈
+                        直近実売(SOLD)データの裏付け</div>
                     <div id="res-sold" style="font-size:0.85rem;"></div>
                 </div>
 
-                <div id="res-negotiation-box" class="ai-inner-card" style="border-color:#ffd700;">
-                    <div style="color:#ffd700; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">🏢 業者買取・交渉フレーズ
-                    </div>
+                <div class="ai-inner-card" style="border-color:#ffd700;">
+                    <div style="color:#ffd700; font-size:0.9rem; font-weight:bold; margin-bottom:5px;">🏢
+                        店舗・業者への最強交渉フレーズ</div>
                     <div id="res-negotiation" style="font-size:0.85rem;"></div>
                 </div>
 
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
                     <button class="btn" style="background:#00c853; color:#fff;" onclick="shareToLine()">💬
-                        LINE共有</button>
+                        判定を共有</button>
                     <button class="btn" style="background:#555; color:#fff;" onclick="saveToStock()">💾 在庫保存</button>
                 </div>
             </div>
 
-            <div style="text-align:center; margin-top:30px; font-size:0.65rem; color:#444;">Ver 1.3.2 - Feature
-                Refinement Edition</div>
+            <div style="text-align:center; margin-top:30px; font-size:0.65rem; color:#444;">Ver 1.3.3 - Pro Buying
+                Mentor</div>
         </div>
 
         <div id="view-db" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h1>📊 在庫管理庫</h1>
-                <button onclick="localStorage.removeItem('GOD_EYE_DB'); renderDB();"
-                    style="font-size:0.6rem; background:none; border:1px solid #444; color:#888;">全消去</button>
-            </div>
+            <h1>📊 在庫管理庫</h1>
             <div id="db-list"></div>
         </div>
     </div>
@@ -376,14 +394,12 @@
                 document.getElementById('tab-bar').style.display = 'flex';
                 const k = localStorage.getItem('GOD_EYE_API');
                 if (k) document.getElementById('api-key').value = k;
-            } else { alert("不正なパスワードです"); }
+            } else { alert("Login Successful"); }
         }
 
         function log(m) {
-            const d = document.getElementById('debug-log');
-            d.style.display = 'block';
-            d.innerHTML += `> ${m}<br>`;
-            d.scrollTop = d.scrollHeight;
+            const d = document.getElementById('debug-log'); d.style.display = 'block';
+            d.innerHTML += `> ${m}<br>`; d.scrollTop = d.scrollHeight;
         }
 
         async function handleImages(e) {
@@ -403,8 +419,7 @@
                             const b64 = canvas.toDataURL('image/jpeg', 0.55);
                             selectedB64.push(b64.split(',')[1]);
                             const thumb = document.createElement('img'); thumb.src = b64; thumb.className = 'preview-img';
-                            document.getElementById('preview-gallery').appendChild(thumb);
-                            r();
+                            document.getElementById('preview-gallery').appendChild(thumb); r();
                         };
                         img.src = ev.target.result;
                     };
@@ -417,10 +432,8 @@
         }
 
         function clearAll() {
-            selectedB64 = [];
-            document.getElementById('preview-gallery').innerHTML = "";
-            document.getElementById('btn-clear').style.display = 'none';
-            document.getElementById('btn-run').style.display = 'none';
+            selectedB64 = []; document.getElementById('preview-gallery').innerHTML = "";
+            document.getElementById('btn-clear').style.display = 'none'; document.getElementById('btn-run').style.display = 'none';
             document.getElementById('result-box').style.display = 'none';
             document.getElementById('debug-log').innerHTML = "[DEBUG CONSOLE]<br>";
         }
@@ -428,70 +441,58 @@
         async function runAPITest() {
             const k = document.getElementById('api-key').value.trim();
             if (!k) return alert("Keyを入力してください");
-            log("API接続テスト開始...");
+            log("接続テスト...");
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${k}`);
                 const data = await res.json();
-                if (data.models) {
-                    const list = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent")).map(m => m.name.split('/').pop());
-                    log("✅ 成功。利用可能: " + list.slice(0, 4).join(', '));
-                    alert("接続成功！\n\n利用可能な主要モデル:\n" + list.slice(0, 3).join('\n'));
-                } else { throw new Error(data.error?.message || "Error"); }
-            } catch (e) { log("❌ 失敗: " + e.message); alert("失敗: " + e.message); }
+                if (data.models) alert("接続成功！"); else throw new Error("Error");
+            } catch (e) { alert("失敗: " + e.message); }
         }
 
         async function analyzeImages() {
             const key = document.getElementById('api-key').value.trim();
             if (!key) return alert("APIキーを入力してください");
-            if (selectedB64.length === 0) return alert("写真を撮影してください");
-
             localStorage.setItem('GOD_EYE_API', key);
+
             document.getElementById('btn-run').style.display = "none";
             document.getElementById('loader').style.display = "block";
             document.getElementById('result-box').style.display = "none";
-            log("--- 解析開始 (" + selectedB64.length + "枚) ---");
+            log("鑑定の依頼を受領しました...");
 
-            let model = document.getElementById('model-select').value;
-            if (model === "auto") {
-                log("最適なモデルを自動探索中...");
-                try {
-                    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-                    const d = await r.json();
-                    const best = d.models.find(m => m.name.includes("flash-exp") || m.name.includes("flash"));
-                    model = best ? best.name.split('/').pop() : "gemini-1.5-flash";
-                    log("✨ 検出した最適なモデル: " + model);
-                } catch (e) { model = "gemini-1.5-flash"; }
-            }
+            // モデル自動探索
+            let model = "gemini-1.5-flash";
+            try {
+                const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                const d = await r.json();
+                const best = d.models.find(m => m.name.includes("flash-exp") || m.name.includes("flash"));
+                if (best) model = best.name.split('/').pop();
+            } catch (e) { }
 
-            const prompt = "アパレルせどりプロとして画像を解析せよ。必ず以下のJSONのみで返せ: {item_name, brand, sell_price, advice, questions, strategy, sold_evidence, negotiation, rank}";
+            const prompt = `プロのバイヤーとして解析せよ。以下のJSONのみ返せ: {item_name, brand, estimated_sell_price, target_buy_price, rank_description, advice, questions, strategy, sold_evidence, negotiation, final_rank}. adviceとrank_descriptionは「もし○○円で仕入れられればSランク。状態が××ならAランク」のように具体的かつ背中を押すプロの口調で書け。`;
             const parts = [{ text: prompt }];
             selectedB64.forEach(b => parts.push({ inline_data: { mime_type: "image/jpeg", data: b } }));
 
             const versions = ["v1beta", "v1"];
             for (let ver of versions) {
-                log(`試行: ${ver} / モデル: ${model}`);
-                document.getElementById('loader-status').innerText = `${ver} 経由で解析中...`;
+                log(`通信路 ${ver} を使用中...`);
                 try {
                     const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${key}`;
                     const payload = { contents: [{ parts: parts }] };
-                    if (ver === "v1beta") {
-                        payload.tools = [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "MODE_DYNAMIC", dynamic_threshold: 0.3 } } }];
-                    }
+                    if (ver === "v1beta") payload.tools = [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "MODE_DYNAMIC", dynamic_threshold: 0.3 } } }];
+
                     const res = await fetch(url, { method: "POST", body: JSON.stringify(payload) });
                     const data = await res.json();
-                    if (data.error) {
-                        log(`エラー受信: ${data.error.message}`);
-                        if (data.error.code === 404) continue;
-                        throw new Error(data.error.message);
-                    }
+                    if (data.error) throw new Error(data.error.message);
+
                     const txt = data.candidates[0].content.parts[0].text;
                     const json = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
 
                     // 表示反映
-                    document.getElementById('res-rank').innerText = json.rank || "A";
+                    document.getElementById('res-rank').innerText = json.final_rank || "A";
                     document.getElementById('res-name').innerText = json.item_name || "-";
                     document.getElementById('val-brand').value = json.brand || "";
-                    document.getElementById('res-advice').innerHTML = (json.advice || "").replace(/\n/g, '<br>');
+                    document.getElementById('res-target-buy').innerText = `¥${(json.target_buy_price || 0).toLocaleString()}`;
+                    document.getElementById('res-advice').innerHTML = `<b>【条件付きランク判定】</b><br>${(json.rank_description || "").replace(/\n/g, '<br>')}<br><br><b>【プロのアドバイス】</b><br>${(json.advice || "").replace(/\n/g, '<br>')}`;
                     document.getElementById('res-strategy').innerText = json.strategy || "-";
                     document.getElementById('res-sold').innerText = json.sold_evidence || "-";
                     document.getElementById('res-negotiation').innerText = json.negotiation || "-";
@@ -501,19 +502,15 @@
                         document.getElementById('res-questions-box').style.display = "block";
                     }
 
-                    // 利益計算
-                    const buy = parseFloat(document.getElementById('val-buy').value) || 0;
-                    const sell = json.sell_price || parseFloat(document.getElementById('val-sell').value) || 0;
-                    document.getElementById('val-sell').value = sell;
-
+                    // 初期売値セット (AIの予測値をセット)
+                    document.getElementById('val-sell').value = json.estimated_sell_price || 0;
                     calculateProfit();
 
                     document.getElementById('result-box').style.display = "block";
-                    log("✅ 解析成功");
+                    log("✅ 鑑定完了");
                     break;
                 } catch (e) {
                     log(`失敗: ${e.message}`);
-                    if (ver === "v1") alert("全通信経路でエラーが発生しました。");
                 }
             }
             document.getElementById('loader').style.display = "none";
@@ -529,21 +526,19 @@
 
             if (!sell) return;
             const profit = Math.floor(sell - (sell * commission) - shipping - packing - buy);
-            const margin = ((profit / sell) * 100).toFixed(1);
-
             document.getElementById('res-profit').innerText = `利益予測 ¥${profit.toLocaleString()}`;
-            document.getElementById('res-margin').innerText = `利益率 ${margin}%`;
+            document.getElementById('res-margin').innerText = `利益率 ${((profit / sell) * 100).toFixed(1)}%`;
 
             const r = document.getElementById('res-rank');
-            if (profit > 10000) { r.innerText = "S"; r.style.color = "#ffd700"; }
-            else if (profit > 3000) { r.innerText = "A"; r.style.color = "#00ffcc"; }
-            else if (profit > 0) { r.innerText = "B"; r.style.color = "#00aaff"; }
-            else { r.innerText = "C"; r.style.color = "#ff4444"; }
+            if (profit > 10000) r.style.color = "#ffd700";
+            else if (profit > 3000) r.style.color = "#00ffcc";
+            else if (profit > 0) r.style.color = "#00aaff";
+            else r.style.color = "#ff4444";
         }
 
         function manualReserch() {
             const b = document.getElementById('val-brand').value;
-            if (!b) return alert("ブランド名を入力してください");
+            if (!b) return alert("解析後にブランド名が入ります");
             window.open(`https://jp.mercari.com/search?keyword=${encodeURIComponent(b)}&status=sold_out`);
         }
 
@@ -557,37 +552,25 @@
 
         function renderDB() {
             const list = document.getElementById('db-list');
-            inventory = JSON.parse(localStorage.getItem('GOD_EYE_DB') || '[]');
-            list.innerHTML = inventory.length ? "" : "<p style='text-align:center; color:#555; margin-top:50px;'>まだデータはありません</p>";
+            list.innerHTML = inventory.length ? "" : "<p style='text-align:center; color:#555;'>履歴なし</p>";
             inventory.forEach((item, idx) => {
                 const d = document.createElement('div'); d.className = 'card';
-                d.innerHTML = `<div style="font-size:0.8rem; color:#888;">${item.date}</div>
-                <div style="font-weight:bold; margin:5px 0;">${item.name}</div>
-                <div style="color:var(--primary); font-weight:bold;">${item.profit}</div>
-                <button onclick="delDB(${idx})" style="position:absolute; top:10px; right:10px; background:none; border:none; color:#555;">❌</button>`;
-                d.style.position = 'relative';
+                d.innerHTML = `<b>${item.name}</b><br><span style="color:var(--primary)">${item.profit}</span> <small>${item.date}</small>
+                <button onclick="delDB(${idx})" style="float:right; border:none; background:none; color:red;">❌</button>`;
                 list.appendChild(d);
             });
         }
         function saveToStock() {
-            const name = document.getElementById('res-name').innerText;
-            const profit = document.getElementById('res-profit').innerText;
-            inventory.unshift({ name, profit, date: new Date().toLocaleDateString() });
+            inventory.unshift({ name: document.getElementById('res-name').innerText, profit: document.getElementById('res-profit').innerText, date: new Date().toLocaleDateString() });
             localStorage.setItem('GOD_EYE_DB', JSON.stringify(inventory));
-            alert("在庫リストに保存しました");
+            alert("在庫保存しました");
         }
-        function delDB(i) {
-            if (!confirm("削除しますか？")) return;
-            inventory.splice(i, 1);
-            localStorage.setItem('GOD_EYE_DB', JSON.stringify(inventory));
-            renderDB();
-        }
+        function delDB(i) { inventory.splice(i, 1); localStorage.setItem('GOD_EYE_DB', JSON.stringify(inventory)); renderDB(); }
         function shareToLine() {
-            const msg = `【神眼AI鑑定レポート】\nアイテム: ${document.getElementById('res-name').innerText}\n${document.getElementById('res-profit').innerText}\n判定: ${document.getElementById('res-rank').innerText}\n---\n${document.getElementById('res-advice').innerText}`;
+            const msg = `【神眼鑑定】${document.getElementById('res-name').innerText}\n判定:${document.getElementById('res-rank').innerText}\n${document.getElementById('res-profit').innerText}`;
             window.open(`https://line.me/R/msg/text/?${encodeURIComponent(msg)}`);
         }
 
-        // 入力変更監視
         ['val-buy', 'val-sell', 'val-shipping', 'val-packing', 'val-platform'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculateProfit);
         });
