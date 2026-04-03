@@ -598,6 +598,7 @@
 
         const els = {
             apikey: document.getElementById('input-apikey'), platform: document.getElementById('input-platform'),
+            model: document.getElementById('input-model'),
             brand: document.getElementById('input-brand'), buy: document.getElementById('input-buy'), sell: document.getElementById('input-sell'),
             shipping: document.getElementById('input-shipping'), packing: document.getElementById('input-packing'),
             rank: document.getElementById('rank-text'), profit: document.getElementById('profit-text'),
@@ -616,6 +617,25 @@
         const storedKey = localStorage.getItem(CONFIG.API_STORE_KEY);
         if (storedKey) els.apikey.value = storedKey;
         els.apikey.addEventListener('input', () => localStorage.setItem(CONFIG.API_STORE_KEY, els.apikey.value));
+
+        async function testAPIConnection() {
+            if (!els.apikey.value) return alert("キーを入力してください");
+            const btn = document.getElementById('btn-test-api');
+            btn.innerText = "⏳ 通信中...";
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${els.apikey.value.trim()}`);
+                const data = await res.json();
+                if (data.models) {
+                    alert("✅ 接続成功！利用可能なモデルが確認できました。\n\n利用可能な主要モデル: " + data.models.slice(0, 3).map(m => m.name.split('/').pop()).join(', '));
+                } else {
+                    throw new Error(data.error ? data.error.message : "不明なエラー");
+                }
+            } catch (e) {
+                alert("❌ 接続失敗: " + e.message);
+            } finally {
+                btn.innerText = "⚙️ API接続テストを実行";
+            }
+        }
 
         function switchTab(id) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -662,45 +682,66 @@
         async function analyzeMultipleImages() {
             if (!els.apikey.value) return alert("APIキーを入力してください");
             els.btnAiVision.style.display = "none"; els.visionLoader.style.display = "block";
+
+            const selectedModel = els.model.value;
             const prompt = `アパレルせどりプロとして画像を解析せよ。必ずJSONで返せ。アイテム特定、真贋、SOLD実売検索結果、妥当価格、販売戦略。`;
             const parts = [{ text: prompt + "出力形式: {brand, model, sell_price, advice, missing_info_questions, sales_strategy, sold_evidence, store_negotiation}" }];
             selectedImagesBase64.forEach(b => parts.push({ inline_data: { mime_type: "image/jpeg", data: b } }));
 
-            // 安定した1.5-flashを使用（2.0はFree版でクォータ制限が厳しいため）
-            const modelUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + els.apikey.value.trim();
+            // プロトコルとエンドポイントの定義
+            const apiVersions = ["v1beta", "v1"];
+            let lastError = "";
 
-            try {
-                const res = await fetch(modelUrl, {
-                    method: "POST", body: JSON.stringify({ contents: [{ parts: parts }], tools: [{ google_search_retrieval: {} }] })
-                });
-                const d = await res.json();
-
-                if (d.error) throw new Error(`Google API Error: ${d.error.message} (${d.error.code})`);
-                if (!d.candidates || d.candidates.length === 0) throw new Error("AIの応答が空です。画像が不適切と判定されたか、フィルタリングされた可能性があります。");
-
-                const txt = d.candidates[0].content.parts[0].text;
-                let resJ;
+            for (const ver of apiVersions) {
                 try {
-                    const jsonMatch = txt.match(/\{[\s\S]*\}/);
-                    resJ = JSON.parse(jsonMatch ? jsonMatch[0] : txt);
+                    const modelUrl = `https://generativelanguage.googleapis.com/${ver}/models/${selectedModel}:generateContent?key=${els.apikey.value.trim()}`;
+                    console.log(`Trying API: ${ver} with model: ${selectedModel}`);
+
+                    const res = await fetch(modelUrl, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            contents: [{ parts: parts }],
+                            tools: (ver === "v1beta") ? [{ google_search_retrieval: {} }] : [] // v1はツール制限がある場合あり
+                        })
+                    });
+                    const d = await res.json();
+
+                    if (d.error) {
+                        if (d.error.code === 404) {
+                            lastError = d.error.message;
+                            continue; // 次のバージョンを試す
+                        }
+                        throw new Error(`Google API Error: ${d.error.message} (${d.error.code})`);
+                    }
+                    if (!d.candidates || d.candidates.length === 0) throw new Error("AIの応答が空です。");
+
+                    const txt = d.candidates[0].content.parts[0].text;
+                    let resJ;
+                    try {
+                        const jsonMatch = txt.match(/\{[\s\S]*\}/);
+                        resJ = JSON.parse(jsonMatch ? jsonMatch[0] : txt);
+                    } catch (e) { throw new Error("AIが正しいJSON形式で回答できませんでした。"); }
+
+                    els.brand.value = resJ.brand || ""; els.sell.value = resJ.sell_price || 0;
+                    els.aiText.innerHTML = resJ.advice || "判定なし"; els.aiBox.style.display = "block";
+                    els.questionsText.innerHTML = resJ.missing_info_questions || "-"; els.questionsBox.style.display = "block";
+                    els.strategyText.innerHTML = resJ.sales_strategy || "-"; els.strategyBox.style.display = "block";
+                    els.soldText.innerHTML = resJ.sold_evidence || "-"; els.soldBox.style.display = "block";
+                    els.negotiationText.innerHTML = resJ.store_negotiation || "-"; els.negotiationBox.style.display = "block";
+
+                    currentHtmlReport = resJ.advice;
+                    calculate();
+                    els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
+                    return; // 成功したので終了
+
                 } catch (e) {
-                    console.warn("JSON Parse Error, using raw text", txt);
-                    throw new Error("AIが正しい形式で回答できませんでした。もう一度お試しください。");
+                    lastError = e.message;
+                    if (ver === "v1") break; // 最後まで試した
                 }
-
-                els.brand.value = resJ.brand || ""; els.sell.value = resJ.sell_price || 0;
-                els.aiText.innerHTML = resJ.advice || "判定なし"; els.aiBox.style.display = "block";
-                els.questionsText.innerHTML = resJ.missing_info_questions || "-"; els.questionsBox.style.display = "block";
-                els.strategyText.innerHTML = resJ.sales_strategy || "-"; els.strategyBox.style.display = "block";
-                els.soldText.innerHTML = resJ.sold_evidence || "-"; els.soldBox.style.display = "block";
-                els.negotiationText.innerHTML = resJ.store_negotiation || "-"; els.negotiationBox.style.display = "block";
-
-                currentHtmlReport = resJ.advice;
-                calculate();
-            } catch (e) {
-                alert("🚨 解析に失敗しました。\n\n【詳細】: " + e.message + "\n\n※APIキーが正しいか、または入力欄に『余計な空白(スペース)』が入っていないか確認してください。");
             }
-            finally { els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block"; }
+
+            alert(`🚨 解析に失敗しました。\n\n【原因】: ${lastError}\n\n※「使用AIモデル」を別のもの（Gemini 2.0等）に変更して試してみてください。`);
+            els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
         }
 
         function calculate() {
