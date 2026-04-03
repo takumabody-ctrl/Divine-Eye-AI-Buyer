@@ -516,8 +516,9 @@
                 style="font-size: 0.7rem; background: #000; color: #0f0; padding: 10px; margin-top: 20px; border-radius: 5px; height: 100px; overflow-y: auto; display: none; font-family: monospace;">
                 [DEBUG CONSOLE]<br>
             </div>
-            <div style="text-align: center; font-size: 0.6rem; color: #666; margin-top: 10px;">Ver 1.2.1 (Stability
-                Patch)</div>
+            <div style="text-align: center; font-size: 0.65rem; color: #888; margin-top: 10px; font-weight: bold;">
+                Ver 1.2.3 (Final Stable Fix)
+            </div>
         </div>
 
         <div class="result-container" id="result-box">
@@ -715,10 +716,11 @@
                     const res = await fetch(modelUrl, {
                         method: "POST",
                         signal: controller.signal,
-                        body: JSON.stringify({
-                            contents: [{ parts: parts }],
-                            ...(ver === "v1beta" ? { tools: [{ google_search_retrieval: {} }] } : {})
-                        })
+                        body: JSON.stringify(
+                            (ver === "v1beta") ?
+                                { contents: [{ parts: parts }], tools: [{ google_search_retrieval: {} }] } :
+                                { contents: [{ parts: parts }] }
+                        )
                     });
                     clearTimeout(timeoutId);
                     log("レスポンス受信。パース中...");
