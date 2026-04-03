@@ -667,7 +667,7 @@
             selectedImagesBase64.forEach(b => parts.push({ inline_data: { mime_type: "image/jpeg", data: b } }));
 
             // 安定した1.5-flashを使用（2.0はFree版でクォータ制限が厳しいため）
-            const modelUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + els.apikey.value;
+            const modelUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + els.apikey.value.trim();
 
             try {
                 const res = await fetch(modelUrl, {
