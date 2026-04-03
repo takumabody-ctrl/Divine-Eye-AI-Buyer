@@ -660,7 +660,7 @@
                             if (w > 800) { h *= 800 / w; w = 800; }
                             canvas.width = w; canvas.height = h;
                             canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                            const b64 = canvas.toDataURL('image/jpeg', 0.82);
+                            const b64 = canvas.toDataURL('image/jpeg', 0.62); // 画質を下げてアップロード高速化 (15枚対応のため)
                             const t = document.createElement('img'); t.src = b64; t.className = "preview-img";
                             els.previewGallery.appendChild(t); selectedImagesBase64.push(b64.split(',')[1]); r();
                         }
@@ -693,25 +693,29 @@
             let lastError = "";
 
             for (const ver of apiVersions) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒でタイムアウト (通信エラー対策)
+
                 try {
                     const modelUrl = `https://generativelanguage.googleapis.com/${ver}/models/${selectedModel}:generateContent?key=${els.apikey.value.trim()}`;
-                    console.log(`Trying API: ${ver} with model: ${selectedModel}`);
+                    els.visionLoader.innerText = `⌛ 解析中... (${ver}経由で通信中)`;
 
                     const res = await fetch(modelUrl, {
                         method: "POST",
+                        signal: controller.signal,
                         body: JSON.stringify({
                             contents: [{ parts: parts }],
-                            tools: (ver === "v1beta") ? [{ google_search_retrieval: {} }] : [] // v1はツール制限がある場合あり
+                            tools: (ver === "v1beta") ? [{ google_search_retrieval: {} }] : []
                         })
                     });
+                    clearTimeout(timeoutId);
                     const d = await res.json();
 
                     if (d.error) {
                         if (d.error.code === 404) {
-                            lastError = d.error.message;
-                            continue; // 次のバージョンを試す
+                            lastError = d.error.message; continue;
                         }
-                        throw new Error(`Google API Error: ${d.error.message} (${d.error.code})`);
+                        throw new Error(`${d.error.message} (${d.error.code})`);
                     }
                     if (!d.candidates || d.candidates.length === 0) throw new Error("AIの応答が空です。");
 
@@ -720,7 +724,7 @@
                     try {
                         const jsonMatch = txt.match(/\{[\s\S]*\}/);
                         resJ = JSON.parse(jsonMatch ? jsonMatch[0] : txt);
-                    } catch (e) { throw new Error("AIが正しいJSON形式で回答できませんでした。"); }
+                    } catch (e) { throw new Error("AIの回答形式が不正です。"); }
 
                     els.brand.value = resJ.brand || ""; els.sell.value = resJ.sell_price || 0;
                     els.aiText.innerHTML = resJ.advice || "判定なし"; els.aiBox.style.display = "block";
@@ -732,16 +736,18 @@
                     currentHtmlReport = resJ.advice;
                     calculate();
                     els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
-                    return; // 成功したので終了
+                    return;
 
                 } catch (e) {
-                    lastError = e.message;
-                    if (ver === "v1") break; // 最後まで試した
+                    clearTimeout(timeoutId);
+                    lastError = e.name === "AbortError" ? "通信がタイムアウトしました。電波の良い場所で再度お試しください。" : e.message;
+                    if (ver === "v1") break;
                 }
             }
 
-            alert(`🚨 解析に失敗しました。\n\n【原因】: ${lastError}\n\n※「使用AIモデル」を別のもの（Gemini 2.0等）に変更して試してみてください。`);
+            alert(`🚨 解析に失敗しました。\n\n【詳細】: ${lastError}\n\n※15枚一括でアップロードする場合、電波状況が悪いと時間がかかります。枚数を減らすか、モデルをGemini 2.0等に変更して試してみてください。`);
             els.visionLoader.style.display = "none"; els.btnAiVision.style.display = "block";
+            els.visionLoader.innerText = "⌛ 実売データを抽出中...";
         }
 
         function calculate() {
