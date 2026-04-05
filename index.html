@@ -432,7 +432,7 @@
                 </div>
             </div>
 
-            <div style="text-align:center; margin-top:40px; font-size:0.6rem; color:#333; font-weight:800;">VER 1.4.1
+            <div style="text-align:center; margin-top:40px; font-size:0.6rem; color:#333; font-weight:800;">VER 1.4.2
                 SUPREME EDITION</div>
         </div>
 
@@ -555,7 +555,7 @@
                 try {
                     const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${key}`;
                     const payload = { contents: [{ parts: parts }] };
-                    if (ver === "v1beta") payload.tools = [{ google_search_retrieval: { dynamic_retrieval_config: { mode: "MODE_DYNAMIC", dynamic_threshold: 0.3 } } }];
+                    if (ver === "v1beta") payload.tools = [{ google_search: {} }];
 
                     const res = await fetch(url, { method: "POST", body: JSON.stringify(payload) });
                     const data = await res.json();
@@ -577,15 +577,16 @@
         }
 
         function showResult(json) {
+            const safeTxt = (v) => String(v || "").replace(/\n/g, '<br>');
             document.getElementById('res-name').innerText = json.item_name || "解析アイテム";
             document.getElementById('res-rank').innerText = json.final_rank || "A";
             document.getElementById('res-rank').style.color = (json.final_rank === 'S') ? 'var(--warning)' : (json.final_rank === 'A') ? 'var(--primary)' : (json.final_rank === 'B') ? '#00aaff' : 'var(--danger)';
             document.getElementById('res-days').innerText = `${json.estimated_days || 14} 日`;
-            document.getElementById('res-advice').innerHTML = (json.advice_text || "").replace(/\n/g, '<br>');
-            document.getElementById('res-risk').innerHTML = (json.risk_text || "").replace(/\n/g, '<br>');
-            document.getElementById('res-sold').innerHTML = (json.sold_text || "").replace(/\n/g, '<br>');
-            document.getElementById('res-strategy').innerHTML = (json.strategy_text || "").replace(/\n/g, '<br>');
-            document.getElementById('res-negotiation').innerHTML = (json.dealer_quote_text || "").replace(/\n/g, '<br>');
+            document.getElementById('res-advice').innerHTML = safeTxt(json.advice_text);
+            document.getElementById('res-risk').innerHTML = safeTxt(json.risk_text);
+            document.getElementById('res-sold').innerHTML = safeTxt(json.sold_text);
+            document.getElementById('res-strategy').innerHTML = safeTxt(json.strategy_text);
+            document.getElementById('res-negotiation').innerHTML = safeTxt(json.dealer_quote_text);
             document.getElementById('val-search-key').value = json.search_keyword || json.item_name || "";
 
             document.getElementById('val-sell').value = json.estimated_sell_price || 0;
