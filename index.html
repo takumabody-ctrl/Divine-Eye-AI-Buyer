@@ -383,6 +383,9 @@
             <div id="debug-log"></div>
 
             <div class="result-box" id="result-box">
+                <div id="res-name"
+                    style="text-align:center; font-weight:800; font-size:1.2rem; margin-bottom:10px; color:var(--primary);">
+                </div>
                 <div class="rank-title">INVESTMENT EVALUATION</div>
                 <div class="rank-val" id="res-rank">-</div>
 
@@ -429,7 +432,7 @@
                 </div>
             </div>
 
-            <div style="text-align:center; margin-top:40px; font-size:0.6rem; color:#333; font-weight:800;">VER 1.4.0
+            <div style="text-align:center; margin-top:40px; font-size:0.6rem; color:#333; font-weight:800;">VER 1.4.1
                 SUPREME EDITION</div>
         </div>
 
@@ -447,7 +450,8 @@
     <script>
         const PASS = "s9mxp3ao7kj1";
         let selectedB64 = [];
-        let inventory = JSON.parse(localStorage.getItem('GOD_EYE_DB') || '[]');
+        let inventory = [];
+        let lastResult = null;
 
         function checkAuth() {
             if (document.getElementById('auth-pass').value === PASS) {
@@ -456,7 +460,16 @@
                 document.getElementById('tab-bar').style.display = 'flex';
                 const k = localStorage.getItem('GOD_EYE_API');
                 if (k) document.getElementById('api-key').value = k;
+                loadInventory();
             } else { alert("ACCESS DENIED"); }
+        }
+
+        function loadInventory() {
+            try {
+                const data = localStorage.getItem('GOD_EYE_DB');
+                inventory = data ? JSON.parse(data) : [];
+                if (!Array.isArray(inventory)) inventory = [];
+            } catch (e) { inventory = []; }
         }
 
         function log(m) {
@@ -497,6 +510,7 @@
             selectedB64 = []; document.getElementById('preview-gallery').innerHTML = "";
             document.getElementById('btn-clear').style.display = 'none'; document.getElementById('btn-run').style.display = 'none';
             document.getElementById('result-box').style.display = 'none';
+            lastResult = null;
         }
 
         async function analyzeImages() {
@@ -548,19 +562,9 @@
 
                     const txt = data.candidates[0].content.parts[0].text;
                     const json = JSON.parse(txt.match(/\{[\s\S]*\}/)[0]);
+                    lastResult = json;
 
-                    // 表示
-                    document.getElementById('res-rank').innerText = json.final_rank || "A";
-                    document.getElementById('res-rank').style.color = (json.final_rank === 'S') ? 'var(--warning)' : (json.final_rank === 'A') ? 'var(--primary)' : (json.final_rank === 'B') ? '#00aaff' : 'var(--danger)';
-                    document.getElementById('res-days').innerText = `${json.estimated_days || 14} 日`;
-                    document.getElementById('res-advice').innerHTML = (json.advice_text || "").replace(/\n/g, '<br>');
-                    document.getElementById('res-risk').innerHTML = (json.risk_text || "").replace(/\n/g, '<br>');
-                    document.getElementById('res-strategy').innerHTML = (json.strategy_text || "").replace(/\n/g, '<br>');
-                    document.getElementById('res-negotiation').innerHTML = (json.dealer_quote_text || "").replace(/\n/g, '<br>');
-                    document.getElementById('val-search-key').value = json.search_keyword || json.item_name || "";
-
-                    document.getElementById('val-sell').value = json.estimated_sell_price || 0;
-                    calculateProfit();
+                    showResult(json);
 
                     document.getElementById('result-box').style.display = "block";
                     log("SUCCESS: ANALYSIS COMPLETE");
@@ -571,13 +575,28 @@
             document.getElementById('btn-run').style.display = "block";
         }
 
+        function showResult(json) {
+            document.getElementById('res-name').innerText = json.item_name || "解析アイテム";
+            document.getElementById('res-rank').innerText = json.final_rank || "A";
+            document.getElementById('res-rank').style.color = (json.final_rank === 'S') ? 'var(--warning)' : (json.final_rank === 'A') ? 'var(--primary)' : (json.final_rank === 'B') ? '#00aaff' : 'var(--danger)';
+            document.getElementById('res-days').innerText = `${json.estimated_days || 14} 日`;
+            document.getElementById('res-advice').innerHTML = (json.advice_text || "").replace(/\n/g, '<br>');
+            document.getElementById('res-risk').innerHTML = (json.risk_text || "").replace(/\n/g, '<br>');
+            document.getElementById('res-sold').innerHTML = (json.sold_text || "").replace(/\n/g, '<br>');
+            document.getElementById('res-strategy').innerHTML = (json.strategy_text || "").replace(/\n/g, '<br>');
+            document.getElementById('res-negotiation').innerHTML = (json.dealer_quote_text || "").replace(/\n/g, '<br>');
+            document.getElementById('val-search-key').value = json.search_keyword || json.item_name || "";
+
+            document.getElementById('val-sell').value = json.estimated_sell_price || 0;
+            calculateProfit();
+        }
+
         function calculateProfit() {
             const buy = parseFloat(document.getElementById('val-buy').value) || 0;
             const sell = parseFloat(document.getElementById('val-sell').value) || 0;
             const commission = parseFloat(document.getElementById('val-platform').value);
             const shipping = parseFloat(document.getElementById('val-shipping').value) || 0;
 
-            // 販売価格が未入力または0の場合は「相場不明」とする
             if (sell <= 0) {
                 document.getElementById('res-profit').innerText = "相場不明";
                 document.getElementById('res-profit').style.color = "var(--text-sub)";
@@ -586,13 +605,7 @@
 
             const profit = Math.floor(sell - (sell * commission) - shipping - buy);
             document.getElementById('res-profit').innerText = `¥${profit.toLocaleString()}`;
-
-            // 利益に応じて色を変更（マイナスなら赤＝赤字予告）
-            if (profit > 0) {
-                document.getElementById('res-profit').style.color = "var(--primary)";
-            } else {
-                document.getElementById('res-profit').style.color = "var(--danger)";
-            }
+            document.getElementById('res-profit').style.color = profit > 0 ? "var(--primary)" : "var(--danger)";
         }
 
         function quickSearch(type) {
@@ -615,17 +628,29 @@
         }
 
         function renderDB() {
-            const list = document.getElementById('db-list'); inventory = JSON.parse(localStorage.getItem('GOD_EYE_DB') || '[]');
+            const list = document.getElementById('db-list');
+            loadInventory();
             list.innerHTML = inventory.length ? "" : "<p style='text-align:center; color:#333; margin-top:50px;'>NO STOCK DATA</p>";
             inventory.forEach((item, idx) => {
                 const d = document.createElement('div'); d.className = 'card';
+                d.style.cursor = 'pointer';
                 d.innerHTML = `<span class="label-sm">${item.date}</span><div style="font-weight:800;">${item.name}</div><div style="color:var(--primary); font-size:1.2rem; font-weight:800;">${item.profit}</div>
-                <button onclick="delDB(${idx})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--danger); font-size:1rem;">×</button>`;
+                <button onclick="event.stopPropagation(); delDB(${idx})" style="position:absolute; top:15px; right:15px; background:none; border:none; color:var(--danger); font-size:1.2rem;">×</button>`;
+                d.onclick = () => {
+                    if (item.fullData) {
+                        lastResult = item.fullData;
+                        showResult(item.fullData);
+                        switchView('judge');
+                    }
+                };
                 d.style.position = 'relative'; list.appendChild(d);
             });
         }
         function saveToStock() {
-            inventory.unshift({ name: "アイテム", profit: document.getElementById('res-profit').innerText, date: new Date().toLocaleDateString() });
+            if (!lastResult) return alert("解析データがありません");
+            const name = lastResult.item_name || "アイテム";
+            const profit = document.getElementById('res-profit').innerText;
+            inventory.unshift({ name, profit, date: new Date().toLocaleDateString(), fullData: lastResult });
             localStorage.setItem('GOD_EYE_DB', JSON.stringify(inventory));
             alert("SAVED TO STOCK");
         }
